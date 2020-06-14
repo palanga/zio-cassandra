@@ -1,9 +1,89 @@
 zio-cassandra
 =============
 
-A ZIO wrapper around datastax Cassandra driver
-----------------------------------------------
+A ZIO wrapper around the Datastax Cassandra driver
+--------------------------------------------------
 
+* Scala 2.13.2
+* Datastax java driver 4.2.2
+* ZIO 1.0.0-RC20
+
+Usage
+-----
+
+```scala
+import java.net.InetSocketAddress
+
+import com.datastax.oss.driver.api.core.CqlSession
+import palanga.zio.cassandra.ZStatement.StringOps
+import palanga.zio.cassandra.{ execute, executeHeadOption, executeHeadOrFail, stream, ZCqlSession }
+
+object SimpleExample {
+
+  /**
+   * This is our model.
+   */
+  case class Painter(region: String, name: String)
+
+  /**
+   * There are many ways to build statements. Perhaps the simplest one is using
+   * `toStatement` String syntax under `palanga.zio.cassandra.ZStatement.StringOps`.
+   * Then you can bind a decoder to the statement so it will automatically parse the
+   * result every time it is executed.
+   */
+  val selectFromPaintersByRegion =
+    "SELECT * FROM painters_by_region WHERE region=?;"
+      .toStatement
+      .decode(row => Painter(row.getString("region"), row.getString("name")))
+
+  /**
+   * For convenience, there access methods to the ZCqlSession module under `palanga.zio.cassandra._`.
+   */
+  val resultSet = execute(selectFromPaintersByRegion.bind("Latin America"))
+  // resultSet: ZIO[ZCqlSession, CassandraException, AsyncResultSet]
+
+  val streamResult = stream(selectFromPaintersByRegion.bind("Latin America"))
+  // streamResult: ZStream[ZCqlSession, CassandraException, Chunk[Painter]]
+  // Every chunk represents a page. It's easy to flatten it with `flattenChunks`.
+
+  val optionResult = executeHeadOption(selectFromPaintersByRegion.bind("Europe"))
+  // optionResult: ZIO[ZCqlSession, CassandraException, Option[Painter]]
+
+  val headOrFailResult = executeHeadOrFail(selectFromPaintersByRegion.bind("West Pacific"))
+  // headOrFailResult: ZIO[ZCqlSession, CassandraException, Painter]
+
+  /**
+   * We can build a ZCqlSession layer from a CqlSession. If you are reading this I guess you are
+   * familiar with ZIO's ZLayer.
+   * 
+   * It will automatically prepare and cache your statements the first time they are run,
+   * hence the `Auto` in `fromCqlSessionAuto`.
+   */
+  val sessionLayer =
+    ZCqlSession
+      .fromCqlSessionAuto(
+        CqlSession
+          .builder()
+          .addContactPoint(new InetSocketAddress("127.0.0.1", 9042))
+          .withKeyspace("zio_cassandra_test")
+          .withLocalDatacenter("datacenter1")
+          .build
+      )
+      .toManaged(_.close.fork)
+      .toLayer
+
+  /**
+   * There are also methods for preparing statements, running plain SimpleStatements or BoundStatements,
+   * and for running statements in parallel. Everything under `palanga.zio.cassandra`
+   */
+
+}
+
+```
+
+
+Troubleshooting:
+----------------
 
 * `brew cask install java11`
 * `brew install cassandra` (will also install `cqlsh`)
@@ -14,3 +94,4 @@ A ZIO wrapper around datastax Cassandra driver
 * Default host and port is `127.0.0.1:9042`
 * `cqlsh` will connect there by default
 * `CREATE KEYSPACE IF NOT EXISTS zio_cassandra_test WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };`
+* To run tests: `./sbt` then `test`

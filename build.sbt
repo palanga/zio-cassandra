@@ -43,7 +43,8 @@ lazy val root = project
   .settings(skip in publish := true)
   .settings(historyPath := None)
   .aggregate(
-    core
+    core,
+    examples,
   )
 
 lazy val core = project
@@ -65,6 +66,19 @@ lazy val core = project
     fork in Test := true,
     fork in run := true,
   )
+
+lazy val examples = project
+  .in(file("examples"))
+  .settings(name := "zio-cassandra-examples")
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")),
+  )
+  .settings(
+    fork in Test := true,
+    fork in run := true,
+  )
+  .dependsOn(core)
 
 val commonSettings = Def.settings(
   scalaVersion := mainScala,
