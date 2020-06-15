@@ -36,20 +36,20 @@ object ZCqlSession {
   trait Service {
     def close: IO[SessionCloseException, Unit]
     def execute(s: ZStatement[_]): IO[CassandraException, AsyncResultSet]
+    def execute(s: BoundStatement): IO[QueryExecutionException, AsyncResultSet]
+    def execute(s: SimpleStatement): IO[QueryExecutionException, AsyncResultSet]
     def executeHeadOption[Out](s: ZStatement[Out]): IO[CassandraException, Option[Out]]
     def executeHeadOrFail[Out](s: ZStatement[Out]): IO[CassandraException, Out]
-    def executePrepared(s: BoundStatement): IO[QueryExecutionException, AsyncResultSet]
-    def executePreparedPar(ss: BoundStatement*): IO[QueryExecutionException, List[AsyncResultSet]]
-    def executeSimple(s: SimpleStatement): IO[QueryExecutionException, AsyncResultSet]
-    def executeSimplePar(ss: SimpleStatement*): IO[QueryExecutionException, List[AsyncResultSet]]
+    def executePar(ss: BoundStatement*): IO[QueryExecutionException, List[AsyncResultSet]]
+    def executeParSimple(ss: SimpleStatement*): IO[QueryExecutionException, List[AsyncResultSet]]
     def prepare(s: SimpleStatement): IO[PrepareStatementException, PreparedStatement]
     def preparePar(ss: SimpleStatement*): IO[PrepareStatementException, List[PreparedStatement]]
     def stream[Out](s: ZStatement[Out]): Stream[CassandraException, Chunk[Out]]
-    def streamPrepared(s: BoundStatement): Stream[CassandraException, Chunk[Row]]
-    def streamSimple(s: SimpleStatement): Stream[CassandraException, Chunk[Row]]
+    def stream(s: BoundStatement): Stream[CassandraException, Chunk[Row]]
+    def stream(s: SimpleStatement): Stream[CassandraException, Chunk[Row]]
     def streamResultSet(s: ZStatement[_]): Stream[CassandraException, AsyncResultSet]
-    def streamResultSetPrepared(s: BoundStatement): Stream[CassandraException, AsyncResultSet]
-    def streamResultSetSimple(s: SimpleStatement): Stream[CassandraException, AsyncResultSet]
+    def streamResultSet(s: BoundStatement): Stream[CassandraException, AsyncResultSet]
+    def streamResultSet(s: SimpleStatement): Stream[CassandraException, AsyncResultSet]
   }
 
   private[cassandra] def decode[T](s: ZStatement[T])(row: Row): IO[DecodeException, T] =
@@ -86,17 +86,17 @@ final class AutoPrepareStatementSession private[cassandra] (
       else ZIO fail EmptyResultSetException(s)
     }
 
-  override def executePrepared(s: BoundStatement): IO[QueryExecutionException, AsyncResultSet] =
+  override def execute(s: BoundStatement): IO[QueryExecutionException, AsyncResultSet] =
     ZIO fromCompletionStage session.executeAsync(s) mapError QueryExecutionException(s.getPreparedStatement.getQuery)
 
-  override def executePreparedPar(ss: BoundStatement*): IO[QueryExecutionException, List[AsyncResultSet]] =
-    ZIO collectAllPar (ss map executePrepared)
+  override def executePar(ss: BoundStatement*): IO[QueryExecutionException, List[AsyncResultSet]] =
+    ZIO collectAllPar (ss map execute)
 
-  override def executeSimple(s: SimpleStatement): IO[QueryExecutionException, AsyncResultSet] =
+  override def execute(s: SimpleStatement): IO[QueryExecutionException, AsyncResultSet] =
     ZIO fromCompletionStage session.executeAsync(s) mapError QueryExecutionException(s.getQuery)
 
-  override def executeSimplePar(ss: SimpleStatement*): IO[QueryExecutionException, List[AsyncResultSet]] =
-    ZIO collectAllPar (ss map executeSimple)
+  override def executeParSimple(ss: SimpleStatement*): IO[QueryExecutionException, List[AsyncResultSet]] =
+    ZIO collectAllPar (ss map execute)
 
   override def prepare(s: SimpleStatement): IO[PrepareStatementException, PreparedStatement] =
     ZIO fromCompletionStage (session prepareAsync s) mapError PrepareStatementException(s)
@@ -111,25 +111,25 @@ final class AutoPrepareStatementSession private[cassandra] (
   override def stream[Out](s: ZStatement[Out]): Stream[CassandraException, Chunk[Out]] =
     streamResultSet(s).mapM(ChunkOps fromJavaIterable _.currentPage() mapM decode(s) mapError DecodeException(s))
 
-  override def streamPrepared(s: BoundStatement): Stream[CassandraException, Chunk[Row]] =
-    streamResultSetPrepared(s).map(ChunkOps fromJavaIterable _.currentPage())
+  override def stream(s: BoundStatement): Stream[CassandraException, Chunk[Row]] =
+    streamResultSet(s).map(ChunkOps fromJavaIterable _.currentPage())
 
-  override def streamSimple(s: SimpleStatement): Stream[CassandraException, Chunk[Row]] =
-    streamResultSetSimple(s).map(ChunkOps fromJavaIterable _.currentPage())
+  override def stream(s: SimpleStatement): Stream[CassandraException, Chunk[Row]] =
+    streamResultSet(s).map(ChunkOps fromJavaIterable _.currentPage())
 
   override def streamResultSet(s: ZStatement[_]): Stream[CassandraException, AsyncResultSet] =
     ZStream
       .fromEffect(execute(s))
       .flatMap(paginate(_) mapError QueryExecutionException(s.statement.getQuery))
 
-  override def streamResultSetPrepared(s: BoundStatement): Stream[CassandraException, AsyncResultSet] =
+  override def streamResultSet(s: BoundStatement): Stream[CassandraException, AsyncResultSet] =
     ZStream
-      .fromEffect(executePrepared(s))
+      .fromEffect(execute(s))
       .flatMap(paginate(_) mapError QueryExecutionException(s.getPreparedStatement.getQuery))
 
-  override def streamResultSetSimple(s: SimpleStatement): Stream[CassandraException, AsyncResultSet] =
+  override def streamResultSet(s: SimpleStatement): Stream[CassandraException, AsyncResultSet] =
     ZStream
-      .fromEffect(executeSimple(s))
+      .fromEffect(execute(s))
       .flatMap(paginate(_) mapError QueryExecutionException(s.getQuery))
 
   private def executePrepared(s: ZStatement[_])(ps: PreparedStatement): IO[QueryExecutionException, AsyncResultSet] =

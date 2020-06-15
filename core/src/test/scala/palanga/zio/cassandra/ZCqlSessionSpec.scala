@@ -64,7 +64,7 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
       .build
 
   private def initialize(session: ZCqlSession.Service) =
-    session.executeSimple(dropTable) *> session.executeSimple(createTable)
+    session.execute(dropTable) *> session.execute(createTable)
 
   private val painterDecoder: Row => Painter = row => Painter(row.getString(0), row.getString(1))
 
@@ -111,10 +111,10 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
         val benito = Painter(ARGENTINA, "Benito Quinquela Martín")
         prepare(insertStatement.statement)
           .map(_.bind(benito.country, benito.name))
-          .flatMap(executePrepared)
+          .flatMap(execute)
           .zipRight(prepare(selectByCountryAndNameStatement.statement))
           .map(_.bind(benito.country, benito.name))
-          .flatMap(executePrepared)
+          .flatMap(execute)
           .flatMap(rs => ZIO effect painterDecoder(rs.one()))
           .map(assert(_)(equalTo(benito)))
       },
@@ -123,16 +123,16 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
         val monet  = Painter(FRANCE, "Claude Monet")
         for {
           insert :: select :: Nil <- preparePar(insertStatement.statement, selectByCountryAndNameStatement.statement)
-          _                       <- executePreparedPar(insert.bind(berthe.country, berthe.name), insert.bind(monet.country, monet.name))
-          rss                     <- executePreparedPar(select.bind(berthe.country, berthe.name), select.bind(monet.country, monet.name))
+          _                       <- executePar(insert.bind(berthe.country, berthe.name), insert.bind(monet.country, monet.name))
+          rss                     <- executePar(select.bind(berthe.country, berthe.name), select.bind(monet.country, monet.name))
           b :: m :: Nil           <- ZIO effect rss.map(_.one()).map(painterDecoder)
         } yield assert(b)(equalTo(berthe)) && assert(m)(equalTo(monet))
       },
       testM("execute simple") {
         val remedios                          = Painter(SPAIN, "Remedios Varo")
         val remediosValues: util.List[AnyRef] = java.util.List.of(remedios.country, remedios.name)
-        executeSimple(insertStatement.statement.setPositionalValues(remediosValues))
-          .zipRight(executeSimple(selectByCountryAndNameStatement.statement.setPositionalValues(remediosValues)))
+        execute(insertStatement.statement.setPositionalValues(remediosValues))
+          .zipRight(execute(selectByCountryAndNameStatement.statement.setPositionalValues(remediosValues)))
           .flatMap(rs => ZIO effect painterDecoder(rs.one()))
           .map(assert(_)(equalTo(remedios)))
       },
@@ -143,11 +143,11 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
         val daliValues: util.List[AnyRef]   = java.util.List.of(dali.country, dali.name)
         val leBrunValues: util.List[AnyRef] = java.util.List.of(leBrun.country, leBrun.name)
 
-        executeSimplePar(
+        executeParSimple(
           insertStatement.statement.setPositionalValues(daliValues),
           insertStatement.statement.setPositionalValues(leBrunValues),
         ).zipRight(
-            executeSimplePar(
+            executeParSimple(
               selectByCountryAndNameStatement.statement.setPositionalValues(daliValues),
               selectByCountryAndNameStatement.statement.setPositionalValues(leBrunValues),
             )

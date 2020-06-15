@@ -60,7 +60,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
       )
       .build
 
-  private def initialize(session: ZCqlSession.Service) = session.executeSimple(createTable)
+  private def initialize(session: ZCqlSession.Service) = session.execute(createTable)
 
   private val insertStatement =
     SimpleStatement.builder("INSERT INTO painters_by_region (region, name) VALUES (?,?);").build
@@ -89,7 +89,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
   private def populate(session: ZCqlSession.Service) =
     session
       .prepare(insertStatement)
-      .flatMap(ps => session.executePreparedPar(painters.map(painter => ps.bind(painter.region, painter.name)): _*))
+      .flatMap(ps => session.executePar(painters.map(painter => ps.bind(painter.region, painter.name)): _*))
 
   private val painterDecoder: Row => Painter = row => Painter(row.getString(0), row.getString(1))
 
@@ -126,7 +126,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
 
         prepare(selectByRegionStatement.statement)
           .map(_.bind(LATIN_AMERICA))
-          .flatMap(streamPrepared(_).runCollect)
+          .flatMap(stream(_).runCollect)
           .map(pages =>
             assert(pages.headOption.fold(0)(_.size))(equalTo(PAGE_SIZE)) &&
               assert(pages.flatten.map(painterDecoder))(hasSameElements(latinPainters))
@@ -135,7 +135,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
       },
       testM("stream simple") {
 
-        streamSimple(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(LATIN_AMERICA))).runCollect
+        stream(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(LATIN_AMERICA))).runCollect
           .map(pages =>
             assert(pages.headOption.fold(0)(_.size))(equalTo(PAGE_SIZE)) &&
               assert(pages.flatten.map(painterDecoder))(hasSameElements(latinPainters))
@@ -157,7 +157,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
 
         prepare(selectByRegionStatement.statement)
           .map(_.bind(EUROPE))
-          .flatMap(streamResultSetPrepared(_).runCollect)
+          .flatMap(streamResultSet(_).runCollect)
           .map(_.count(_.currentPage().asScala.nonEmpty))
           .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
 
@@ -166,7 +166,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
 
         import scala.jdk.CollectionConverters.IterableHasAsScala
 
-        streamResultSetSimple(
+        streamResultSet(
           selectByRegionStatement.statement.setPositionalValues(java.util.List.of(EUROPE))
         ).runCollect
           .map(_.count(_.currentPage().asScala.nonEmpty))
