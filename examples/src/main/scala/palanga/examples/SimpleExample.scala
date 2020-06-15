@@ -4,12 +4,12 @@ import java.net.InetSocketAddress
 
 import com.datastax.oss.driver.api.core.CqlSession
 import palanga.zio.cassandra.ZStatement.StringOps
-import palanga.zio.cassandra.{ execute, executeHeadOption, executeHeadOrFail, stream, ZCqlSession }
+import palanga.zio.cassandra.{ ZCqlSession, module => zCqlSession }
 
 object SimpleExample {
 
   /**
-   * This is our model.
+   * Our model.
    */
   case class Painter(region: String, name: String)
 
@@ -20,24 +20,24 @@ object SimpleExample {
    * result every time it is executed.
    */
   val selectFromPaintersByRegion =
-    "SELECT * FROM painters_by_region WHERE region=?;"
-      .toStatement
-      .decode(row => Painter(row.getString("region"), row.getString("name")))
+    "SELECT * FROM painters_by_region WHERE region=?;"                        // String
+      .toStatement                                                            // ZSimpleStatement[Row]
+      .decode(row => Painter(row.getString("region"), row.getString("name"))) // ZSimpleStatement[Painter]
 
   /**
-   * For convenience, there access methods to the ZCqlSession module under `palanga.zio.cassandra._`.
+   * For convenience, there are access methods to the ZCqlSession module under `palanga.zio.cassandra.module`.
    */
-  val resultSet = execute(selectFromPaintersByRegion.bind("Latin America"))
+  val resultSet = zCqlSession execute selectFromPaintersByRegion.bind("Latin America")
   // resultSet: ZIO[ZCqlSession, CassandraException, AsyncResultSet]
 
-  val streamResult = stream(selectFromPaintersByRegion.bind("Latin America"))
+  val streamResult = zCqlSession stream selectFromPaintersByRegion.bind("Latin America")
   // streamResult: ZStream[ZCqlSession, CassandraException, Chunk[Painter]]
-  // Every chunk represents a page. It's easy to flatten it with `flattenChunks`.
+  // Every chunk represents a page. It's easy to flatten them with `.flattenChunks`.
 
-  val optionResult = executeHeadOption(selectFromPaintersByRegion.bind("Europe"))
+  val optionResult = zCqlSession executeHeadOption selectFromPaintersByRegion.bind("Europe")
   // optionResult: ZIO[ZCqlSession, CassandraException, Option[Painter]]
 
-  val headOrFailResult = executeHeadOrFail(selectFromPaintersByRegion.bind("West Pacific"))
+  val headOrFailResult = zCqlSession executeHeadOrFail selectFromPaintersByRegion.bind("West Pacific")
   // headOrFailResult: ZIO[ZCqlSession, CassandraException, Painter]
 
   /**
@@ -62,7 +62,7 @@ object SimpleExample {
 
   /**
    * There are also methods for preparing statements, running plain SimpleStatements or BoundStatements,
-   * and for running statements in parallel. Everything under `palanga.zio.cassandra`
+   * and for running statements in parallel. Everything under `palanga.zio.cassandra.module`.
    */
 
 }

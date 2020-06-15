@@ -4,6 +4,7 @@ import java.net.InetSocketAddress
 
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
+import palanga.zio.cassandra.module._
 import zio.Schedule.spaced
 import zio.ZIO
 import zio.clock.Clock
