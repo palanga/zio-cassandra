@@ -90,19 +90,19 @@ final class AutoPrepareStatementSession private[cassandra] (
     ZIO fromCompletionStage session.executeAsync(s) mapError QueryExecutionException(s.getPreparedStatement.getQuery)
 
   override def executePar(ss: BoundStatement*): IO[QueryExecutionException, List[AsyncResultSet]] =
-    ZIO collectAllPar (ss map execute)
+    ZIO collectAllPar (ss.map(execute).toList)
 
   override def execute(s: SimpleStatement): IO[QueryExecutionException, AsyncResultSet] =
     ZIO fromCompletionStage session.executeAsync(s) mapError QueryExecutionException(s.getQuery)
 
   override def executeParSimple(ss: SimpleStatement*): IO[QueryExecutionException, List[AsyncResultSet]] =
-    ZIO collectAllPar (ss map execute)
+    ZIO collectAllPar (ss.map(execute).toList)
 
   override def prepare(s: SimpleStatement): IO[PrepareStatementException, PreparedStatement] =
     ZIO fromCompletionStage (session prepareAsync s) mapError PrepareStatementException(s)
 
   override def preparePar(ss: SimpleStatement*): IO[PrepareStatementException, List[PreparedStatement]] =
-    ZIO collectAllPar (ss map prepare)
+    ZIO collectAllPar (ss.map(prepare).toList)
 
   /**
    * This version of the datastax driver doesn't support reactive streams but the version that does is incompatible
