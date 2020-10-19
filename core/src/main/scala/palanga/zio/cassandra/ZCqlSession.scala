@@ -145,6 +145,7 @@ final class AutoPrepareStatementSession private[cassandra] (
 
 private object ChunkOps {
   import scala.jdk.CollectionConverters.IterableHasAsScala
+  // See https://github.com/zio/zio/issues/3822
   def fromJavaIterable[A: ClassTag](iterable: java.lang.Iterable[A]): Chunk[A] =
     Chunk fromArray iterable.asScala.toArray
 }
