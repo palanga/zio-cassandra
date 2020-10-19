@@ -4,9 +4,9 @@ zio-cassandra
 A ZIO wrapper around the Datastax Cassandra driver
 --------------------------------------------------
 
-* Scala 2.13.2
-* Datastax java driver 4.2.2
-* ZIO 1.0.0-RC20
+* Scala 2.13.3
+* Datastax java driver 4.9.0
+* ZIO 1.0.3
 
 Usage
 -----
@@ -81,6 +81,9 @@ object SimpleExample {
 
 ```
 
+Testing:
+--------
+* To run tests: `./sbt` then `test`
 
 Troubleshooting:
 ----------------
@@ -94,4 +97,3 @@ Troubleshooting:
 * Default host and port is `127.0.0.1:9042`
 * `cqlsh` will connect there by default
 * `CREATE KEYSPACE IF NOT EXISTS zio_cassandra_test WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };`
-* To run tests: `./sbt` then `test`
