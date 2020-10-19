@@ -31,7 +31,7 @@ object module {
     ZIO.accessM(_.get.executePar(ss: _*))
 
   /**
-   * The same as [[execute]] but in parallel.
+   * The same as `execute` but in parallel.
    */
   def executeParSimple(ss: SimpleStatement*): ZIO[ZCqlSession, QueryExecutionException, List[AsyncResultSet]] =
     ZIO.accessM(_.get.executeParSimple(ss: _*))

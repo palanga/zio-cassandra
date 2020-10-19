@@ -1,10 +1,10 @@
 //val mainScala = "2.12.11"
 //val allScala  = Seq("2.13.2", mainScala)
-val mainScala = "2.13.2"
+val mainScala = "2.13.3"
 val allScala  = Seq(mainScala)
 
-val cassandraVersion = "4.2.2"
-val zioVersion       = "1.0.0-RC20"
+val cassandraVersion = "4.9.0"
+val zioVersion       = "1.0.3"
 
 inThisBuild(
   List(
@@ -72,11 +72,12 @@ lazy val examples = project
   .settings(name := "zio-cassandra-examples")
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")),
+    libraryDependencies ++= Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"))
   )
   .settings(
     fork in Test := true,
     fork in run := true,
+    skip in publish := true,
   )
   .dependsOn(core)
 
