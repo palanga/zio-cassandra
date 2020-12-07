@@ -1,6 +1,4 @@
-//val mainScala = "2.12.11"
-//val allScala  = Seq("2.13.2", mainScala)
-val mainScala = "2.13.3"
+val mainScala = "2.13.4"
 val allScala  = Seq(mainScala)
 
 val cassandraVersion = "4.9.0"
@@ -8,7 +6,7 @@ val zioVersion       = "1.0.3"
 
 inThisBuild(
   List(
-    organization := "com.github.palanga",
+    organization := "dev.palanga",
     homepage := Some(url("https://github.com/palanga/zio-cassandra")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     parallelExecution in Test := false,
@@ -95,7 +93,7 @@ val commonSettings = Def.settings(
     "-language:existentials",
     "-unchecked",
     "-Xlint:_,-type-parameter-shadow",
-    "-Xfatal-warnings",
+//    "-Xfatal-warnings",
     "-Ywarn-numeric-widen",
     "-Ywarn-unused:patvars,-implicits",
     "-Ywarn-value-discard",
