@@ -4,9 +4,18 @@ zio-cassandra
 A ZIO wrapper around the Datastax Cassandra driver
 --------------------------------------------------
 
-* Scala 2.13.3
+* Scala 2.13.4
 * Datastax java driver 4.9.0
 * ZIO 1.0.3
+
+Installation
+------------
+
+Add this to your `build.sbt` file
+```sbt
+resolvers += Resolver.bintrayRepo("palanga", "maven")
+libraryDependencies += "dev.palanga" %% "zio-cassandra" % "0.0.0+9-67330416+20201207-2133"
+```
 
 Usage
 -----
@@ -83,6 +92,7 @@ object SimpleExample {
 
 Testing:
 --------
+
 * To run tests: `./sbt` then `test`
 
 Troubleshooting:
