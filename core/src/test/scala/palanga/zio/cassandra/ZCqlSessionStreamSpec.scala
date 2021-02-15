@@ -1,7 +1,5 @@
 package palanga.zio.cassandra
 
-import java.net.InetSocketAddress
-
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
 import palanga.zio.cassandra.module._
@@ -13,6 +11,7 @@ import zio.duration._
 import zio.test.Assertion._
 import zio.test._
 
+import java.net.InetSocketAddress
 import scala.language.postfixOps
 
 object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
@@ -30,7 +29,6 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
           CqlSession
             .builder()
             .addContactPoint(address)
-            .withKeyspace(keyspace)
             .withLocalDatacenter(datacenter)
             .build
         )
@@ -47,6 +45,21 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
     (putStrLn("Closing cassandra session...") *> session.close <* putStrLn("Closed cassandra session"))
       .catchAll(t => putStrLn("Failed trying to close cassandra session:\n" + t.getMessage))
 
+  private val createKeyspace =
+    SimpleStatement
+      .builder(
+        s"""CREATE KEYSPACE IF NOT EXISTS $keyspace WITH REPLICATION = {
+           |  'class': 'SimpleStrategy',
+           |  'replication_factor': 1
+           |};
+           |""".stripMargin
+      )
+      .build
+
+  private val useKeyspace = SimpleStatement.builder(s"USE $keyspace;").build
+
+  private val dropTable = SimpleStatement.builder("DROP TABLE IF EXISTS painters_by_country;").build
+
   private val createTable =
     SimpleStatement
       .builder(
@@ -60,7 +73,11 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
       )
       .build
 
-  private def initialize(session: ZCqlSession.Service) = session.execute(createTable)
+  private def initialize(session: ZCqlSession.Service) =
+    session.execute(createKeyspace) *>
+      session.execute(useKeyspace) *>
+      session.execute(dropTable) *>
+      session.execute(createTable)
 
   private val insertStatement =
     SimpleStatement.builder("INSERT INTO painters_by_region (region, name) VALUES (?,?);").build

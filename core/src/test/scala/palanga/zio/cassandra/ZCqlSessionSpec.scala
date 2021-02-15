@@ -1,8 +1,5 @@
 package palanga.zio.cassandra
 
-import java.net.InetSocketAddress
-import java.util
-
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
 import palanga.zio.cassandra.CassandraException.EmptyResultSetException
@@ -15,6 +12,8 @@ import zio.duration._
 import zio.test.Assertion._
 import zio.test._
 
+import java.net.InetSocketAddress
+import java.util
 import scala.language.postfixOps
 
 object ZCqlSessionSpec extends DefaultRunnableSpec {
@@ -32,7 +31,6 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
           CqlSession
             .builder()
             .addContactPoint(address)
-            .withKeyspace(keyspace)
             .withLocalDatacenter(datacenter)
             .build
         )
@@ -47,6 +45,19 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
   private def closeSession(session: ZCqlSession.Service) =
     (putStrLn("Closing cassandra session...") *> session.close <* putStrLn("Closed cassandra session"))
       .catchAll(t => putStrLn("Failed trying to close cassandra session:\n" + t.getMessage))
+
+  private val createKeyspace =
+    SimpleStatement
+      .builder(
+        s"""CREATE KEYSPACE IF NOT EXISTS $keyspace WITH REPLICATION = {
+           |  'class': 'SimpleStrategy',
+           |  'replication_factor': 1
+           |};
+           |""".stripMargin
+      )
+      .build
+
+  private val useKeyspace = SimpleStatement.builder(s"USE $keyspace;").build
 
   private val dropTable = SimpleStatement.builder("DROP TABLE IF EXISTS painters_by_country;").build
 
@@ -64,7 +75,10 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
       .build
 
   private def initialize(session: ZCqlSession.Service) =
-    session.execute(dropTable) *> session.execute(createTable)
+    session.execute(createKeyspace) *>
+      session.execute(useKeyspace) *>
+      session.execute(dropTable) *>
+      session.execute(createTable)
 
   private val painterDecoder: Row => Painter = row => Painter(row.getString(0), row.getString(1))
 
