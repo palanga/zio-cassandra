@@ -1,5 +1,1 @@
-addSbtPlugin("com.dwijnand"      % "sbt-dynver"   % "4.0.0")
-addSbtPlugin("com.jsuereth"      % "sbt-pgp"      % "1.1.2")
-addSbtPlugin("org.foundweekends" % "sbt-bintray"  % "0.6.1")
 addSbtPlugin("org.scalameta"     % "sbt-scalafmt" % "2.4.0")
-addSbtPlugin("org.xerial.sbt"    % "sbt-sonatype" % "3.9.2")

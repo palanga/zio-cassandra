@@ -13,8 +13,8 @@ Installation
 
 Add this to your `build.sbt` file
 ```sbt
-resolvers += Resolver.bintrayRepo("palanga", "maven")
-libraryDependencies += "dev.palanga" %% "zio-cassandra" % "0.0.0+9-67330416+20201207-2133"
+resolvers += "Artifactory" at "https://palanga.jfrog.io/artifactory/maven/"
+libraryDependencies += "dev.palanga" %% "zio-cassandra" % "0.0.1"
 ```
 
 Usage

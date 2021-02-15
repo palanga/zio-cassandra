@@ -10,9 +10,6 @@ inThisBuild(
     homepage := Some(url("https://github.com/palanga/zio-cassandra")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     parallelExecution in Test := false,
-    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing := file("/tmp/public.asc"),
-    pgpSecretRing := file("/tmp/secret.asc"),
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/palanga/zio-cassandra/"),
@@ -27,10 +24,10 @@ inThisBuild(
         url("https://github.com/palanga"),
       )
     ),
+    publishTo := Some("Artifactory Realm" at "https://palanga.jfrog.io/artifactory/maven/"),
+    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
   )
 )
-
-ThisBuild / publishTo := sonatypePublishToBundle.value
 
 name := "zio-cassandra"
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
@@ -39,7 +36,6 @@ addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 lazy val root = project
   .in(file("."))
   .settings(skip in publish := true)
-  .settings(historyPath := None)
   .aggregate(
     core,
     examples,
@@ -49,6 +45,7 @@ lazy val core = project
   .in(file("core"))
   .settings(name := "zio-cassandra")
   .settings(commonSettings)
+  .settings(version := "0.0.1")
   .settings(
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     libraryDependencies ++= Seq(
