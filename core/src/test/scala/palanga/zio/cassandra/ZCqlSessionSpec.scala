@@ -1,71 +1,27 @@
 package palanga.zio.cassandra
 
-import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
 import palanga.zio.cassandra.CassandraException.EmptyResultSetException
 import palanga.zio.cassandra.module._
-import zio.Schedule.spaced
 import zio.ZIO
 import zio.clock.Clock
-import zio.console.{ putStrLn, Console }
-import zio.duration._
+import zio.console.Console
 import zio.test.Assertion._
 import zio.test._
 
-import java.net.InetSocketAddress
-import java.util
 import scala.language.postfixOps
 
 object ZCqlSessionSpec extends DefaultRunnableSpec {
 
-  private val host       = "127.0.0.1"
-  private val port       = 9042
-  private val address    = new InetSocketAddress(host, port)
-  private val keyspace   = "zio_cassandra_test"
-  private val datacenter = "datacenter1"
+  private val tableName = "painters_by_country"
 
-  private val cqlSessionLayer =
-    putStrLn("Opening cassandra session...")
-      .zipRight(
-        ZCqlSession.fromCqlSessionAuto(
-          CqlSession
-            .builder()
-            .addContactPoint(address)
-            .withLocalDatacenter(datacenter)
-            .build
-        )
-      )
-      .toManaged(closeSession(_).fork)
-      .tap(_ => putStrLn("Initializing db...").toManaged_)
-      .tap(initialize(_).toManaged_)
-      .tap(_ => putStrLn("Cassandra session is ready").toManaged_)
-      .tapError(t => putStrLn("Failed trying to build cql session layer: " + t.getMessage).toManaged_)
-      .toLayer
-
-  private def closeSession(session: ZCqlSession.Service) =
-    (putStrLn("Closing cassandra session...") *> session.close <* putStrLn("Closed cassandra session"))
-      .catchAll(t => putStrLn("Failed trying to close cassandra session:\n" + t.getMessage))
-
-  private val createKeyspace =
-    SimpleStatement
-      .builder(
-        s"""CREATE KEYSPACE IF NOT EXISTS $keyspace WITH REPLICATION = {
-           |  'class': 'SimpleStrategy',
-           |  'replication_factor': 1
-           |};
-           |""".stripMargin
-      )
-      .build
-
-  private val useKeyspace = SimpleStatement.builder(s"USE $keyspace;").build
-
-  private val dropTable = SimpleStatement.builder("DROP TABLE IF EXISTS painters_by_country;").build
+  private val dropTable = SimpleStatement.builder(s"DROP TABLE IF EXISTS $tableName;").build
 
   private val createTable =
     SimpleStatement
       .builder(
         s"""
-           |CREATE TABLE IF NOT EXISTS painters_by_country (
+           |CREATE TABLE IF NOT EXISTS $tableName (
            |  country text,
            |  name text,
            |  PRIMARY KEY (country, name)
@@ -74,18 +30,14 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
       )
       .build
 
-  private def initialize(session: ZCqlSession.Service) =
-    session.execute(createKeyspace) *>
-      session.execute(useKeyspace) *>
-      session.execute(dropTable) *>
-      session.execute(createTable)
+  private def initialize(session: ZCqlSession.Service) = session.execute(dropTable) *> session.execute(createTable)
 
   private val painterDecoder: Row => Painter = row => Painter(row.getString(0), row.getString(1))
 
-  private val insertStatement = ZStatement("INSERT INTO painters_by_country (country, name) VALUES (?,?);")
+  private val insertStatement = ZStatement(s"INSERT INTO $tableName (country, name) VALUES (?,?);")
 
   private val selectByCountryAndNameStatement =
-    ZStatement("SELECT * FROM painters_by_country WHERE country=? AND name=?;").decode(painterDecoder)
+    ZStatement(s"SELECT * FROM $tableName WHERE country=? AND name=?;").decode(painterDecoder)
 
   private val ARGENTINA = "Argentina"
   private val BRAZIL    = "Brazil"
@@ -143,8 +95,8 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
         } yield assert(b)(equalTo(berthe)) && assert(m)(equalTo(monet))
       },
       testM("execute simple") {
-        val remedios                          = Painter(SPAIN, "Remedios Varo")
-        val remediosValues: util.List[AnyRef] = java.util.List.of(remedios.country, remedios.name)
+        val remedios                               = Painter(SPAIN, "Remedios Varo")
+        val remediosValues: java.util.List[AnyRef] = java.util.List.of(remedios.country, remedios.name)
         execute(insertStatement.statement.setPositionalValues(remediosValues))
           .zipRight(execute(selectByCountryAndNameStatement.statement.setPositionalValues(remediosValues)))
           .flatMap(rs => ZIO effect painterDecoder(rs.one()))
@@ -152,10 +104,10 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
       },
       testM("execute simple par") {
 
-        val dali                            = Painter(SPAIN, "Salvador Dalí")
-        val leBrun                          = Painter(FRANCE, "Élisabeth Le Brun")
-        val daliValues: util.List[AnyRef]   = java.util.List.of(dali.country, dali.name)
-        val leBrunValues: util.List[AnyRef] = java.util.List.of(leBrun.country, leBrun.name)
+        val dali                                 = Painter(SPAIN, "Salvador Dalí")
+        val leBrun                               = Painter(FRANCE, "Élisabeth Le Brun")
+        val daliValues: java.util.List[AnyRef]   = java.util.List.of(dali.country, dali.name)
+        val leBrunValues: java.util.List[AnyRef] = java.util.List.of(leBrun.country, leBrun.name)
 
         executeParSimple(
           insertStatement.statement.setPositionalValues(daliValues),
@@ -181,16 +133,13 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
         }
       },
       testM("execute head or fail failed case") {
-        executeHeadOrFail(selectByCountryAndName(ARGENTINA, "nik")).run map
+        executeHeadOrFail(selectByCountryAndName(ARGENTINA, "nik chorro")).run map
           (assert(_)(fails(isSubtype[EmptyResultSetException](anything))))
       },
     )
 
-  val dependencies =
-    Console.live ++ Clock.live >>> cqlSessionLayer
-      .tapError(_ => putStrLn("Retrying in one second..."))
-      .retry(spaced(1 second))
+  private val dependencies = Console.live ++ Clock.live >>> ZCqlSession.layer.default.tap(s => initialize(s.get))
 
-  override def spec = testSuite.provideSomeLayerShared[ZTestEnv](dependencies mapError TestFailure.fail)
+  override def spec = testSuite.provideCustomLayerShared(dependencies mapError TestFailure.fail)
 
 }

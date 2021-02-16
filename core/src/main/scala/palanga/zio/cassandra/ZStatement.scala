@@ -7,11 +7,11 @@ object ZStatement {
   def apply(query: String): ZSimpleStatement[Row] =
     new ZSimpleStatement[Row](SimpleStatement.builder(query).build(), bindNothing, identityRow)
 
-  implicit class StringOps(val self: String) extends AnyVal {
+  implicit class StringOps(private val self: String) extends AnyVal {
     def toStatement: ZSimpleStatement[Row] = apply(self)
   }
 
-  implicit class SimpleStatementOps(val self: SimpleStatement) extends AnyVal {
+  implicit class SimpleStatementOps(private val self: SimpleStatement) extends AnyVal {
     def bind(params: Any*): ZBoundStatement[Row]    = new ZBoundStatement[Row](self, _.bind(params: _*), identity)
     def decode[T](f: Row => T): ZSimpleStatement[T] = new ZSimpleStatement[T](self, _.bind(), f)
   }

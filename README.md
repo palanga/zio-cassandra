@@ -21,11 +21,16 @@ Usage
 -----
 
 ```scala
-import java.net.InetSocketAddress
+package palanga.examples
 
 import com.datastax.oss.driver.api.core.CqlSession
 import palanga.zio.cassandra.ZStatement.StringOps
-import palanga.zio.cassandra.{ ZCqlSession, module => zCqlSession }
+import palanga.zio.cassandra.{ CassandraException, ZCqlSession, module => zCqlSession }
+import zio.clock.Clock
+import zio.console.Console
+import zio.{ ZIO, ZLayer, ZManaged }
+
+import java.net.InetSocketAddress
 
 object SimpleExample {
 
@@ -62,29 +67,55 @@ object SimpleExample {
   // headOrFailResult: ZIO[ZCqlSession, CassandraException, Painter]
 
   /**
-   * We can build a ZCqlSession layer from a CqlSession. If you are reading this I guess you are
-   * familiar with ZIO's ZLayer.
-   *
-   * It will automatically prepare and cache your statements the first time they are run,
-   * hence the `Auto` in `fromCqlSessionAuto`.
+   * The simplest and better way of creating a session is:
    */
-  val sessionLayer =
-    ZCqlSession
-      .fromCqlSessionAuto(
+  val sessionLayer: ZLayer[Console with Clock, CassandraException, ZCqlSession] =
+    ZCqlSession.layer
+      .from(
+        "localhost",
+        9042,
+        "painters_keyspace",
+      )
+
+  /**
+   * But it's not the only way to create a session:
+   */
+  val managedSession: ZManaged[Console with Clock, CassandraException, ZCqlSession.Service] =
+    ZCqlSession.managed
+      .from(
+        "localhost",
+        9042,
+        "painters_keyspace",
+      )
+
+  val rawSession: ZIO[Console with Clock, CassandraException, ZCqlSession.Service] =
+    ZCqlSession.raw
+      .from(
+        "localhost",
+        9042,
+        "painters_keyspace",
+      )
+
+  /**
+   * In order to get full flexibility on how to build a session we can:
+   */
+  val rawSessionFromCqlSession: ZIO[Any, CassandraException.SessionOpenException, ZCqlSession.Service] =
+    ZCqlSession.raw
+      .fromCqlSession(
         CqlSession
           .builder()
-          .addContactPoint(new InetSocketAddress("127.0.0.1", 9042))
-          .withKeyspace("zio_cassandra_test")
+          .addContactPoint(new InetSocketAddress("localhost", 9042))
+          .withKeyspace("painters_keyspace")
           .withLocalDatacenter("datacenter1")
           .build
       )
-      .toManaged(_.close.fork)
-      .toLayer
 
   /**
    * There are also methods for preparing statements, running plain SimpleStatements or BoundStatements,
    * and for running statements in parallel. Everything under `palanga.zio.cassandra.module`.
    */
+
+}
 
 }
 

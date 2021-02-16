@@ -1,6 +1,8 @@
 val mainScala = "2.13.4"
 val allScala  = Seq(mainScala)
 
+val thisVersion      = "0.0.2"
+
 val cassandraVersion = "4.9.0"
 val zioVersion       = "1.0.3"
 
@@ -30,6 +32,7 @@ inThisBuild(
 )
 
 name := "zio-cassandra"
+
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
@@ -45,7 +48,7 @@ lazy val core = project
   .in(file("core"))
   .settings(name := "zio-cassandra")
   .settings(commonSettings)
-  .settings(version := "0.0.1")
+  .settings(version := thisVersion)
   .settings(
     testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
     libraryDependencies ++= Seq(

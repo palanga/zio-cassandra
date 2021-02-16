@@ -1,70 +1,26 @@
 package palanga.zio.cassandra
 
-import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
 import palanga.zio.cassandra.module._
-import zio.Schedule.spaced
 import zio.ZIO
 import zio.clock.Clock
-import zio.console.{ putStrLn, Console }
-import zio.duration._
+import zio.console.Console
 import zio.test.Assertion._
 import zio.test._
 
-import java.net.InetSocketAddress
 import scala.language.postfixOps
 
 object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
 
-  private val host       = "127.0.0.1"
-  private val port       = 9042
-  private val address    = new InetSocketAddress(host, port)
-  private val keyspace   = "zio_cassandra_test"
-  private val datacenter = "datacenter1"
+  private val tableName = "painters_by_region"
 
-  private val cqlSessionLayer =
-    putStrLn("Opening cassandra session...")
-      .zipRight(
-        ZCqlSession.fromCqlSessionAuto(
-          CqlSession
-            .builder()
-            .addContactPoint(address)
-            .withLocalDatacenter(datacenter)
-            .build
-        )
-      )
-      .toManaged(closeSession(_).fork)
-      .tap(_ => putStrLn("Initializing db...").toManaged_)
-      .tap(initialize(_).toManaged_)
-      .tap(populate(_).toManaged_)
-      .tap(_ => putStrLn("Cassandra session is ready").toManaged_)
-      .tapError(t => putStrLn("Failed trying to build cql session layer: " + t.getMessage).toManaged_)
-      .toLayer
-
-  private def closeSession(session: ZCqlSession.Service) =
-    (putStrLn("Closing cassandra session...") *> session.close <* putStrLn("Closed cassandra session"))
-      .catchAll(t => putStrLn("Failed trying to close cassandra session:\n" + t.getMessage))
-
-  private val createKeyspace =
-    SimpleStatement
-      .builder(
-        s"""CREATE KEYSPACE IF NOT EXISTS $keyspace WITH REPLICATION = {
-           |  'class': 'SimpleStrategy',
-           |  'replication_factor': 1
-           |};
-           |""".stripMargin
-      )
-      .build
-
-  private val useKeyspace = SimpleStatement.builder(s"USE $keyspace;").build
-
-  private val dropTable = SimpleStatement.builder("DROP TABLE IF EXISTS painters_by_country;").build
+  private val dropTable = SimpleStatement.builder(s"DROP TABLE IF EXISTS $tableName;").build
 
   private val createTable =
     SimpleStatement
       .builder(
         s"""
-           |CREATE TABLE IF NOT EXISTS painters_by_region (
+           |CREATE TABLE IF NOT EXISTS $tableName (
            |  region text,
            |  name text,
            |  PRIMARY KEY (region, name)
@@ -74,13 +30,10 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
       .build
 
   private def initialize(session: ZCqlSession.Service) =
-    session.execute(createKeyspace) *>
-      session.execute(useKeyspace) *>
-      session.execute(dropTable) *>
-      session.execute(createTable)
+    session.execute(dropTable) *> session.execute(createTable) *> populate(session)
 
   private val insertStatement =
-    SimpleStatement.builder("INSERT INTO painters_by_region (region, name) VALUES (?,?);").build
+    SimpleStatement.builder(s"INSERT INTO $tableName (region, name) VALUES (?,?);").build
 
   private val EUROPE        = "Europe"
   private val LATIN_AMERICA = "Latin America"
@@ -117,7 +70,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
   private val selectByRegionStatement = {
     import ZStatement.SimpleStatementOps
     SimpleStatement
-      .builder("SELECT * FROM painters_by_region WHERE region=?;")
+      .builder(s"SELECT * FROM $tableName WHERE region=?;")
       .setPageSize(PAGE_SIZE)
       .build()
       .decode(painterDecoder)
@@ -183,20 +136,15 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
 
         import scala.jdk.CollectionConverters.IterableHasAsScala
 
-        streamResultSet(
-          selectByRegionStatement.statement.setPositionalValues(java.util.List.of(EUROPE))
-        ).runCollect
+        streamResultSet(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(EUROPE))).runCollect
           .map(_.count(_.currentPage().asScala.nonEmpty))
           .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
 
       },
     )
 
-  private val dependencies =
-    Console.live ++ Clock.live >>> cqlSessionLayer
-      .tapError(_ => putStrLn("Retrying in one second..."))
-      .retry(spaced(1 second))
+  private val dependencies = Console.live ++ Clock.live >>> ZCqlSession.layer.default.tap(s => initialize(s.get))
 
-  override def spec = testSuite.provideSomeLayerShared[ZTestEnv](dependencies mapError TestFailure.fail)
+  override def spec = testSuite.provideCustomLayerShared(dependencies mapError TestFailure.fail)
 
 }

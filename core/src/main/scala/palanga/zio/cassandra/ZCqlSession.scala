@@ -3,35 +3,116 @@ package palanga.zio.cassandra
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql._
 import palanga.zio.cassandra.CassandraException._
-import palanga.zio.cassandra.ZCqlSession.{ decode, paginate }
-import zio.stream.{ Stream, ZStream }
-import zio.{ Chunk, IO, Ref, ZIO }
+import zio.Schedule.{ recurs, spaced }
+import zio._
+import zio.clock.Clock
+import zio.console.{ putStrLn, Console }
+import zio.duration._
+import zio.stream.Stream
 
-import scala.reflect.ClassTag
+import java.net.InetSocketAddress
+import scala.language.postfixOps
 
 object ZCqlSession {
 
-  /**
-   * {{{
-   *    ZCqlSession.fromCqlSessionAuto(
-   *      CqlSession
-   *        .builder()
-   *        .addContactPoint(new InetSocketAddress("127.0.0.1", 9042))
-   *        .withKeyspace("yourkeyspace")
-   *        .withLocalDatacenter("datacenter1")
-   *        .build
-   *    )
-   *    .toManaged(_.close.fork)
-   *    .toLayer
-   * }}}
-   *
-   * Auto because it will automatically prepare and cache your statements for you the first time they are executed.
-   */
-  def fromCqlSessionAuto(self: => CqlSession): IO[SessionOpenException, ZCqlSession.Service] =
-    Ref
-      .make(Map.empty[SimpleStatement, PreparedStatement])
-      .flatMap(ZIO effect new AutoPrepareStatementSession(self, _))
-      .mapError(SessionOpenException)
+  val layer   = ZCqlLayer
+  val managed = ZCqlManaged
+  val raw     = ZCqlRaw
+
+  private[cassandra] object ZCqlRaw {
+
+    /**
+     * WARNING: not managed resource !!!
+     */
+    def from(
+      host: String = "localhost",
+      port: Int = 9042,
+      keyspace: String = "test",
+      datacenter: String = "datacenter1",
+      shouldCreateKeyspace: Boolean = false,
+    ): ZIO[Console with Clock, CassandraException, ZCqlSession.Service] =
+      (for {
+        _       <- putStrLn("Opening cassandra session...")
+        session <- fromCqlSession(
+                     CqlSession
+                       .builder()
+                       .addContactPoint(new InetSocketAddress(host, port))
+                       .withLocalDatacenter(datacenter)
+                       .build
+                   )
+        _       <- putStrLn(s"Configuring cassandra keyspace $keyspace...")
+        _       <- session execute createKeyspace(keyspace) when shouldCreateKeyspace
+        _       <- session execute useKeyspace(keyspace)
+        _       <- putStrLn("Cassandra session is ready")
+      } yield session)
+        .tapError(t => putStrLn("Failed trying to build cql session: " + t.getMessage))
+        .tapError(_ => putStrLn("Retrying in one second..."))
+        .retry(spaced(1 second) && recurs(9))
+
+    /**
+     * WARNING: not managed resource !!!
+     *
+     * Keep in mind that calling `build` on [[CqlSession]] has side-effects
+     */
+    def fromCqlSession(self: => CqlSession): ZIO[Any, SessionOpenException, ZCqlSession.Service] =
+      Ref
+        .make(Map.empty[SimpleStatement, PreparedStatement])
+        .flatMap(ZIO effect new LiveZCqlSession(self, _))
+        .mapError(SessionOpenException)
+
+  }
+
+  private[cassandra] object ZCqlLayer {
+
+    def default: ZLayer[Console with Clock, CassandraException, ZCqlSession] = from(shouldCreateKeyspace = true)
+
+    def from(
+      host: String = "0.0.0.0",
+      port: Int = 9042,
+      keyspace: String = "test",
+      datacenter: String = "datacenter1",
+      shouldCreateKeyspace: Boolean = false,
+    ): ZLayer[Console with Clock, CassandraException, ZCqlSession] =
+      ZCqlManaged.from(host, port, keyspace, datacenter, shouldCreateKeyspace).toLayer
+
+  }
+
+  private[cassandra] object ZCqlManaged {
+
+    def default: ZManaged[Console with Clock, CassandraException, ZCqlSession.Service] =
+      from(shouldCreateKeyspace = true)
+
+    def from(
+      host: String = "localhost",
+      port: Int = 9042,
+      keyspace: String = "test",
+      datacenter: String = "datacenter1",
+      shouldCreateKeyspace: Boolean = false,
+    ): ZManaged[Console with Clock, CassandraException, ZCqlSession.Service] =
+      ZCqlRaw.from(host, port, keyspace, datacenter, shouldCreateKeyspace).toManaged(closeSession)
+
+  }
+
+  private def createKeyspace(keyspace: String) =
+    SimpleStatement
+      .builder(
+        s"""CREATE KEYSPACE IF NOT EXISTS $keyspace WITH REPLICATION = {
+           |  'class': 'SimpleStrategy',
+           |  'replication_factor': 1
+           |};
+           |""".stripMargin
+      )
+      .build
+
+  private def useKeyspace(keyspace: String) = SimpleStatement.builder(s"USE $keyspace;").build
+
+  private def closeSession(session: ZCqlSession.Service) =
+    (for {
+      _ <- putStrLn("Closing cassandra session...")
+      _ <- session.close
+      _ <- putStrLn("Closed cassandra session")
+    } yield ())
+      .catchAll(t => putStrLn("Failed trying to close cassandra session:\n" + t.getMessage))
 
   trait Service {
     def close: IO[SessionCloseException, Unit]
@@ -52,100 +133,4 @@ object ZCqlSession {
     def streamResultSet(s: SimpleStatement): Stream[CassandraException, AsyncResultSet]
   }
 
-  private[cassandra] def decode[T](s: ZStatement[T])(row: Row): IO[DecodeException, T] =
-    ZIO effect s.decodeUnsafe(row) mapError (DecodeException(s)(_))
-
-  private[cassandra] def paginate(initial: AsyncResultSet): Stream[Throwable, AsyncResultSet] =
-    ZStream.paginateM(initial) { current: AsyncResultSet =>
-      if (!current.hasMorePages) ZIO succeed (current -> None)
-      else ZIO fromCompletionStage current.fetchNextPage() map { next: AsyncResultSet => current -> Some(next) }
-    }
-
-}
-
-final class AutoPrepareStatementSession private[cassandra] (
-  private val session: CqlSession,
-  private val preparedStatements: Ref[Map[SimpleStatement, PreparedStatement]],
-) extends ZCqlSession.Service {
-
-  override def close: IO[SessionCloseException, Unit] =
-    ZIO effect session.close() mapError SessionCloseException
-
-  override def execute(s: ZStatement[_]): IO[CassandraException, AsyncResultSet] =
-    preparedStatements.get.flatMap(_.get(s.statement).fold(prepare(s) flatMap executePrepared(s))(executePrepared(s)))
-
-  override def executeHeadOption[Out](s: ZStatement[Out]): IO[CassandraException, Option[Out]] =
-    execute(s)
-      .map(result => Option(result.one()))
-      .flatMap(maybeRow => ZIO effect maybeRow.map(s.decodeUnsafe) mapError DecodeException(s))
-
-  override def executeHeadOrFail[Out](s: ZStatement[Out]): IO[CassandraException, Out] =
-    execute(s).flatMap { rs =>
-      val head = rs.one()
-      if (head != null) decode(s)(head)
-      else ZIO fail EmptyResultSetException(s)
-    }
-
-  override def execute(s: BoundStatement): IO[QueryExecutionException, AsyncResultSet] =
-    ZIO fromCompletionStage session.executeAsync(s) mapError QueryExecutionException(s.getPreparedStatement.getQuery)
-
-  override def executePar(ss: BoundStatement*): IO[QueryExecutionException, List[AsyncResultSet]] =
-    ZIO collectAllPar (ss.map(execute).toList)
-
-  override def execute(s: SimpleStatement): IO[QueryExecutionException, AsyncResultSet] =
-    ZIO fromCompletionStage session.executeAsync(s) mapError QueryExecutionException(s.getQuery)
-
-  override def executeParSimple(ss: SimpleStatement*): IO[QueryExecutionException, List[AsyncResultSet]] =
-    ZIO collectAllPar (ss.map(execute).toList)
-
-  override def prepare(s: SimpleStatement): IO[PrepareStatementException, PreparedStatement] =
-    ZIO fromCompletionStage (session prepareAsync s) mapError PrepareStatementException(s)
-
-  override def preparePar(ss: SimpleStatement*): IO[PrepareStatementException, List[PreparedStatement]] =
-    ZIO collectAllPar (ss.map(prepare).toList)
-
-  /**
-   * This version of the datastax driver doesn't support reactive streams but the version that does is incompatible
-   * with the last version of finch.
-   */
-  override def stream[Out](s: ZStatement[Out]): Stream[CassandraException, Chunk[Out]] =
-    streamResultSet(s).mapM(ChunkOps fromJavaIterable _.currentPage() mapM decode(s) mapError DecodeException(s))
-
-  override def stream(s: BoundStatement): Stream[CassandraException, Chunk[Row]] =
-    streamResultSet(s).map(ChunkOps fromJavaIterable _.currentPage())
-
-  override def stream(s: SimpleStatement): Stream[CassandraException, Chunk[Row]] =
-    streamResultSet(s).map(ChunkOps fromJavaIterable _.currentPage())
-
-  override def streamResultSet(s: ZStatement[_]): Stream[CassandraException, AsyncResultSet] =
-    ZStream
-      .fromEffect(execute(s))
-      .flatMap(paginate(_) mapError QueryExecutionException(s.statement.getQuery))
-
-  override def streamResultSet(s: BoundStatement): Stream[CassandraException, AsyncResultSet] =
-    ZStream
-      .fromEffect(execute(s))
-      .flatMap(paginate(_) mapError QueryExecutionException(s.getPreparedStatement.getQuery))
-
-  override def streamResultSet(s: SimpleStatement): Stream[CassandraException, AsyncResultSet] =
-    ZStream
-      .fromEffect(execute(s))
-      .flatMap(paginate(_) mapError QueryExecutionException(s.getQuery))
-
-  private def executePrepared(s: ZStatement[_])(ps: PreparedStatement): IO[QueryExecutionException, AsyncResultSet] =
-    ZIO fromCompletionStage session.executeAsync(s bindUnsafe ps) mapError QueryExecutionException(s.statement.getQuery)
-
-  private def prepare(s: ZStatement[_]): IO[PrepareStatementException, PreparedStatement] =
-    ZIO
-      .fromCompletionStage(session prepareAsync s.statement) // TODO logging
-      .mapError(PrepareStatementException(s.statement))
-      .tap(ps => preparedStatements.update(_ + (s.statement -> ps)))
-
-}
-
-private object ChunkOps {
-  import scala.jdk.CollectionConverters.IterableHasAsScala
-  // See https://github.com/zio/zio/issues/3822
-  def fromJavaIterable[A: ClassTag](iterable: java.lang.Iterable[A]): Chunk[A] =
-    Chunk fromArray iterable.asScala.toArray
 }
