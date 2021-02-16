@@ -14,7 +14,7 @@ Installation
 Add this to your `build.sbt` file
 ```sbt
 resolvers += "Artifactory" at "https://palanga.jfrog.io/artifactory/maven/"
-libraryDependencies += "dev.palanga" %% "zio-cassandra" % "0.0.1"
+libraryDependencies += "dev.palanga" %% "zio-cassandra" % "0.0.2"
 ```
 
 Usage
