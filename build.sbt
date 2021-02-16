@@ -1,7 +1,7 @@
 val mainScala = "2.13.4"
 val allScala  = Seq(mainScala)
 
-val thisVersion      = "0.0.2"
+val thisVersion = "0.0.2"
 
 val cassandraVersion = "4.9.0"
 val zioVersion       = "1.0.3"

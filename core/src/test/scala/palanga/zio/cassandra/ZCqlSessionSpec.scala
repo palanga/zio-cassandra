@@ -113,12 +113,11 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
           insertStatement.statement.setPositionalValues(daliValues),
           insertStatement.statement.setPositionalValues(leBrunValues),
         ).zipRight(
-            executeParSimple(
-              selectByCountryAndNameStatement.statement.setPositionalValues(daliValues),
-              selectByCountryAndNameStatement.statement.setPositionalValues(leBrunValues),
-            )
+          executeParSimple(
+            selectByCountryAndNameStatement.statement.setPositionalValues(daliValues),
+            selectByCountryAndNameStatement.statement.setPositionalValues(leBrunValues),
           )
-          .flatMap(rss => ZIO effect rss.map(_.one()).map(painterDecoder))
+        ).flatMap(rss => ZIO effect rss.map(_.one()).map(painterDecoder))
           .map { case d :: l :: Nil => assert(d)(equalTo(dali)) && assert(l)(equalTo(leBrun)) }
 
       },

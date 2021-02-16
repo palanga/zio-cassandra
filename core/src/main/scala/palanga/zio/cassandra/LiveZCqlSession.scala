@@ -7,7 +7,7 @@ import palanga.zio.cassandra.util.{ decode, paginate }
 import zio.stream.{ Stream, ZStream }
 import zio.{ Chunk, IO, Ref, ZIO }
 
-final class LiveZCqlSession private[cassandra](
+final class LiveZCqlSession private[cassandra] (
   private val session: CqlSession,
   private val preparedStatements: Ref[Map[SimpleStatement, PreparedStatement]],
 ) extends ZCqlSession.Service {
