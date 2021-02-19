@@ -19,7 +19,7 @@ object ZCqlSession {
   val managed = ZCqlManaged
   val raw     = ZCqlRaw
 
-  private[cassandra] object ZCqlRaw {
+  object ZCqlRaw {
 
     /**
      * WARNING: not managed resource !!!
@@ -62,7 +62,7 @@ object ZCqlSession {
 
   }
 
-  private[cassandra] object ZCqlLayer {
+  object ZCqlLayer {
 
     def default: ZLayer[Console with Clock, CassandraException, ZCqlSession] = from(shouldCreateKeyspace = true)
 
@@ -77,13 +77,13 @@ object ZCqlSession {
 
   }
 
-  private[cassandra] object ZCqlManaged {
+  object ZCqlManaged {
 
     def default: ZManaged[Console with Clock, CassandraException, ZCqlSession.Service] =
       from(shouldCreateKeyspace = true)
 
     def from(
-      host: String = "localhost",
+      host: String = "0.0.0.0",
       port: Int = 9042,
       keyspace: String = "test",
       datacenter: String = "datacenter1",

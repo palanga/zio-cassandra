@@ -1,7 +1,9 @@
+name := "zio-cassandra"
+
+val zioCassandraVersion = "0.0.3"
+
 val mainScala = "2.13.4"
 val allScala  = Seq(mainScala)
-
-val thisVersion = "0.0.2"
 
 val cassandraVersion = "4.9.0"
 val zioVersion       = "1.0.3"
@@ -31,53 +33,51 @@ inThisBuild(
   )
 )
 
-name := "zio-cassandra"
-
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
-lazy val root = project
-  .in(file("."))
-  .settings(skip in publish := true)
-  .aggregate(
-    core,
-    examples,
-  )
+lazy val root =
+  (project in file("."))
+    .settings(skip in publish := true)
+    .aggregate(
+      core,
+      examples,
+    )
 
-lazy val core = project
-  .in(file("core"))
-  .settings(name := "zio-cassandra")
-  .settings(commonSettings)
-  .settings(version := thisVersion)
-  .settings(
-    testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
-    libraryDependencies ++= Seq(
-      "com.datastax.oss" % "java-driver-core" % cassandraVersion,
-      "dev.zio"         %% "zio"              % zioVersion,
-      "dev.zio"         %% "zio-streams"      % zioVersion,
-      "dev.zio"         %% "zio-test"         % zioVersion % "test",
-      "dev.zio"         %% "zio-test-sbt"     % zioVersion % "test",
-      compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
-    ),
-  )
-  .settings(
-    fork in Test := true,
-    fork in run := true,
-  )
+lazy val core =
+  (project in file("core"))
+    .settings(name := "zio-cassandra")
+    .settings(commonSettings)
+    .settings(version := zioCassandraVersion)
+    .settings(
+      testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
+      libraryDependencies ++= Seq(
+        "com.datastax.oss" % "java-driver-core" % cassandraVersion,
+        "dev.zio"         %% "zio"              % zioVersion,
+        "dev.zio"         %% "zio-streams"      % zioVersion,
+        "dev.zio"         %% "zio-test"         % zioVersion % "test",
+        "dev.zio"         %% "zio-test-sbt"     % zioVersion % "test",
+        compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
+      ),
+    )
+    .settings(
+      fork in Test := true,
+      fork in run := true,
+    )
 
-lazy val examples = project
-  .in(file("examples"))
-  .settings(name := "zio-cassandra-examples")
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++= Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"))
-  )
-  .settings(
-    fork in Test := true,
-    fork in run := true,
-    skip in publish := true,
-  )
-  .dependsOn(core)
+lazy val examples =
+  (project in file("examples"))
+    .settings(name := "zio-cassandra-examples")
+    .settings(commonSettings)
+    .settings(
+      libraryDependencies ++= Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"))
+    )
+    .settings(
+      fork in Test := true,
+      fork in run := true,
+      skip in publish := true,
+    )
+    .dependsOn(core)
 
 val commonSettings = Def.settings(
   scalaVersion := mainScala,
