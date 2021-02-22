@@ -10,7 +10,7 @@ import zio.test._
 
 import scala.language.postfixOps
 
-object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
+object ZCqlSessionStreamSpec {
 
   private val tableName = "painters_by_region"
 
@@ -29,7 +29,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
       )
       .build
 
-  private def initialize(session: ZCqlSession.Service) =
+  def initialize(session: ZCqlSession.Service) =
     session.execute(dropTable) *> session.execute(createTable) *> populate(session)
 
   private val insertStatement =
@@ -78,7 +78,7 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
 
   private def selectByRegion(region: String) = selectByRegionStatement.bind(region)
 
-  private val testSuite =
+  val testSuite =
     suite("ZCqlSession suite")(
       testM("stream") {
 
@@ -142,9 +142,5 @@ object ZCqlSessionStreamSpec extends DefaultRunnableSpec {
 
       },
     )
-
-  private val dependencies = Console.live ++ Clock.live >>> ZCqlSession.layer.default.tap(s => initialize(s.get))
-
-  override def spec = testSuite.provideCustomLayerShared(dependencies mapError TestFailure.fail)
 
 }

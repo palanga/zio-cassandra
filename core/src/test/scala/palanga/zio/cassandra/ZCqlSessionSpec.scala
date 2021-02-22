@@ -11,7 +11,7 @@ import zio.test._
 
 import scala.language.postfixOps
 
-object ZCqlSessionSpec extends DefaultRunnableSpec {
+object ZCqlSessionSpec {
 
   private val tableName = "painters_by_country"
 
@@ -30,7 +30,7 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
       )
       .build
 
-  private def initialize(session: ZCqlSession.Service) = session.execute(dropTable) *> session.execute(createTable)
+  def initialize(session: ZCqlSession.Service) = session.execute(dropTable) *> session.execute(createTable)
 
   private val painterDecoder: Row => Painter = row => Painter(row.getString(0), row.getString(1))
 
@@ -52,7 +52,7 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
   private def selectByCountryAndName(country: String, name: String) =
     selectByCountryAndNameStatement.bind(country, name)
 
-  private val testSuite =
+  val testSuite =
     suite("ZCqlSession suite")(
       testM("execute") {
         val frida = Painter(MEXICO, "Frida Kahlo")
@@ -136,9 +136,5 @@ object ZCqlSessionSpec extends DefaultRunnableSpec {
           (assert(_)(fails(isSubtype[EmptyResultSetException](anything))))
       },
     )
-
-  private val dependencies = Console.live ++ Clock.live >>> ZCqlSession.layer.default.tap(s => initialize(s.get))
-
-  override def spec = testSuite.provideCustomLayerShared(dependencies mapError TestFailure.fail)
 
 }

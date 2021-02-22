@@ -5,11 +5,11 @@ import palanga.zio.cassandra.ZStatement.{ bindNothing, identityRow }
 import zio.test.Assertion._
 import zio.test._
 
-object ZStatementSpec extends DefaultRunnableSpec {
+object ZStatementSpec {
 
   private val query = "SELECT * FROM painters WHERE name=?"
 
-  private val testSuite =
+  val testSuite =
     suite("ZStatement suite")(
       test("from apply") {
 
@@ -58,7 +58,5 @@ object ZStatementSpec extends DefaultRunnableSpec {
 
       },
     )
-
-  override def spec = testSuite
 
 }
