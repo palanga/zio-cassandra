@@ -2,6 +2,7 @@ package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
 import palanga.zio.cassandra.module._
+import palanga.zio.cassandra.session.ZCqlSession
 import zio.ZIO
 import zio.clock.Clock
 import zio.console.Console

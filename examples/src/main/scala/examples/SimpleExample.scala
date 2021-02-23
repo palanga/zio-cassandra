@@ -1,7 +1,8 @@
-package palanga.examples
+package examples
 
 import com.datastax.oss.driver.api.core.CqlSession
 import palanga.zio.cassandra.ZStatement.StringOps
+import palanga.zio.cassandra.session.ZCqlSession
 import palanga.zio.cassandra.{ CassandraException, ZCqlSession, module => zCqlSession }
 import zio.clock.Clock
 import zio.console.Console
@@ -47,9 +48,9 @@ object SimpleExample {
    * The simplest and better way of creating a session is:
    */
   val sessionLayer: ZLayer[Console with Clock, CassandraException, ZCqlSession] =
-    ZCqlSession.layer
+    palanga.zio.cassandra.session.layer
       .from(
-        "localhost",
+        "127.0.0.1",
         9042,
         "painters_keyspace",
       )
@@ -58,17 +59,17 @@ object SimpleExample {
    * But it's not the only way to create a session:
    */
   val managedSession: ZManaged[Console with Clock, CassandraException, ZCqlSession.Service] =
-    ZCqlSession.managed
+    palanga.zio.cassandra.session.managed
       .from(
-        "localhost",
+        "127.0.0.1",
         9042,
         "painters_keyspace",
       )
 
   val rawSession: ZIO[Console with Clock, CassandraException, ZCqlSession.Service] =
-    ZCqlSession.raw
+    palanga.zio.cassandra.session.raw
       .from(
-        "localhost",
+        "127.0.0.1",
         9042,
         "painters_keyspace",
       )
@@ -77,11 +78,11 @@ object SimpleExample {
    * In order to get full flexibility on how to build a session we can:
    */
   val rawSessionFromCqlSession: ZIO[Any, CassandraException.SessionOpenException, ZCqlSession.Service] =
-    ZCqlSession.raw
+    palanga.zio.cassandra.session.raw
       .fromCqlSession(
         CqlSession
           .builder()
-          .addContactPoint(new InetSocketAddress("localhost", 9042))
+          .addContactPoint(new InetSocketAddress("127.0.0.1", 9042))
           .withKeyspace("painters_keyspace")
           .withLocalDatacenter("datacenter1")
           .build

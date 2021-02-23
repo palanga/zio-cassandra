@@ -1,6 +1,6 @@
 name := "zio-cassandra"
 
-val zioCassandraVersion = "0.0.3"
+val zioCassandraVersion = "0.1.0"
 
 val mainScala = "2.13.4"
 val allScala  = Seq(mainScala)

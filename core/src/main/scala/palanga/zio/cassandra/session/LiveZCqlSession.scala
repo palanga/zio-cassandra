@@ -1,9 +1,10 @@
-package palanga.zio.cassandra
+package palanga.zio.cassandra.session
 
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql._
 import palanga.zio.cassandra.CassandraException._
 import palanga.zio.cassandra.util.{ decode, paginate }
+import palanga.zio.cassandra.{ util, CassandraException, ZStatement }
 import zio.stream.{ Stream, ZStream }
 import zio.{ Chunk, IO, Ref, ZIO }
 

@@ -7,7 +7,7 @@ import zio.test.{ suite, DefaultRunnableSpec, TestAspect, TestFailure }
 object Spec extends DefaultRunnableSpec {
 
   private val dependencies =
-    Console.live ++ Clock.live >>> ZCqlSession.layer.default.tap { sessionLayer =>
+    Console.live ++ Clock.live >>> session.layer.default.tap { sessionLayer =>
       val session = sessionLayer.get
       ZCqlSessionSpec.initialize(session) <&> ZCqlSessionStreamSpec.initialize(session)
     }
