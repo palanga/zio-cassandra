@@ -5,7 +5,7 @@ val zioCassandraVersion = "0.1.0"
 val mainScala = "2.13.4"
 val allScala  = Seq(mainScala)
 
-val cassandraVersion = "4.9.0"
+val cassandraVersion = "4.10.0"
 val zioVersion       = "1.0.3"
 
 inThisBuild(
