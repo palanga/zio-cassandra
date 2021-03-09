@@ -1,12 +1,12 @@
 name := "zio-cassandra"
 
-val zioCassandraVersion = "0.1.0"
+val ZIO_CASSANDRA_VERSION = "0.2.0"
 
-val mainScala = "2.13.4"
-val allScala  = Seq(mainScala)
+val MAIN_SCALA = "2.13.4"
+val ALL_SCALA  = Seq(MAIN_SCALA)
 
-val cassandraVersion = "4.10.0"
-val zioVersion       = "1.0.4-2"
+val DATASTAX_JAVA_CASSANDRA_VERSION = "4.10.0"
+val ZIO_VERSION                     = "1.0.4-2"
 
 inThisBuild(
   List(
@@ -48,15 +48,15 @@ lazy val core =
   (project in file("core"))
     .settings(name := "zio-cassandra")
     .settings(commonSettings)
-    .settings(version := zioCassandraVersion)
+    .settings(version := ZIO_CASSANDRA_VERSION)
     .settings(
       testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
       libraryDependencies ++= Seq(
-        "com.datastax.oss" % "java-driver-core" % cassandraVersion,
-        "dev.zio"         %% "zio"              % zioVersion,
-        "dev.zio"         %% "zio-streams"      % zioVersion,
-        "dev.zio"         %% "zio-test"         % zioVersion % "test",
-        "dev.zio"         %% "zio-test-sbt"     % zioVersion % "test",
+        "com.datastax.oss" % "java-driver-core" % DATASTAX_JAVA_CASSANDRA_VERSION,
+        "dev.zio"         %% "zio"              % ZIO_VERSION,
+        "dev.zio"         %% "zio-streams"      % ZIO_VERSION,
+        "dev.zio"         %% "zio-test"         % ZIO_VERSION % "test",
+        "dev.zio"         %% "zio-test-sbt"     % ZIO_VERSION % "test",
         compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       ),
     )
@@ -67,7 +67,7 @@ lazy val core =
 
 lazy val examples =
   (project in file("examples"))
-    .settings(name := "zio-cassandra-examples")
+    .settings(name := "examples")
     .settings(commonSettings)
     .settings(
       libraryDependencies ++= Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"))
@@ -80,8 +80,8 @@ lazy val examples =
     .dependsOn(core)
 
 val commonSettings = Def.settings(
-  scalaVersion := mainScala,
-  crossScalaVersions := allScala,
+  scalaVersion := MAIN_SCALA,
+  crossScalaVersions := ALL_SCALA,
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
