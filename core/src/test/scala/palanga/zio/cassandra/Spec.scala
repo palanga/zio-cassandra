@@ -2,7 +2,7 @@ package palanga.zio.cassandra
 
 import zio.clock.Clock
 import zio.console.Console
-import zio.test.{ suite, DefaultRunnableSpec, TestAspect, TestFailure }
+import zio.test.{ DefaultRunnableSpec, TestAspect, TestFailure }
 
 object Spec extends DefaultRunnableSpec {
 
