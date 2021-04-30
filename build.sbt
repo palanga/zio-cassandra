@@ -14,7 +14,7 @@ inThisBuild(
     organization := "dev.palanga",
     homepage := Some(url("https://github.com/palanga/zio-cassandra")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    parallelExecution in Test := false,
+    Test / parallelExecution := false,
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/palanga/zio-cassandra/"),
@@ -39,7 +39,7 @@ addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 
 lazy val root =
   (project in file("."))
-    .settings(skip in publish := true)
+    .settings(publish / skip := true)
     .aggregate(
       core,
       examples,
@@ -62,8 +62,8 @@ lazy val core =
       ),
     )
     .settings(
-      fork in Test := true,
-      fork in run := true,
+      Test / fork := true,
+      run / fork := true,
     )
 
 lazy val examples =
@@ -74,9 +74,9 @@ lazy val examples =
       libraryDependencies ++= Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"))
     )
     .settings(
-      fork in Test := true,
-      fork in run := true,
-      skip in publish := true,
+      Test / fork := true,
+      run / fork := true,
+      publish / skip := true,
     )
     .dependsOn(core)
 
@@ -115,5 +115,5 @@ val commonSettings = Def.settings(
       )
     case _             => Nil
   }),
-  scalacOptions in Test --= Seq("-Xfatal-warnings"),
+  Test / scalacOptions --= Seq("-Xfatal-warnings"),
 )
