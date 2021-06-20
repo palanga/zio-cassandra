@@ -24,7 +24,7 @@ private[session] object ZCqlRaw {
     keyspace: String = "test",
     datacenter: String = "datacenter1",
     shouldCreateKeyspace: Boolean = false,
-  ): ZIO[Console with Clock, CassandraException, ZCqlSession.Service] =
+  ) =
     (for {
       _       <- putStrLn("Opening cassandra session...")
       session <- fromCqlSession(
