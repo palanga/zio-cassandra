@@ -4,9 +4,9 @@ zio-cassandra
 A ZIO wrapper around the Datastax Cassandra driver
 --------------------------------------------------
 
-* Scala 2.13.4
-* Datastax java driver 4.10.0
-* ZIO 1.0.4-2
+* Scala 2.13.6
+* Datastax java driver 4.12.0
+* ZIO 1.0.9
 
 Installation
 ------------
