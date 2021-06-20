@@ -2,10 +2,10 @@ name := "zio-cassandra"
 
 val ZIO_CASSANDRA_VERSION = "0.4.1"
 
-val MAIN_SCALA = "2.13.5"
+val MAIN_SCALA = "2.13.6"
 val ALL_SCALA  = Seq(MAIN_SCALA)
 
-val DATASTAX_JAVA_CASSANDRA_VERSION = "4.11.0"
+val DATASTAX_JAVA_CASSANDRA_VERSION = "4.12.0"
 
 val ZIO_VERSION = "1.0.7"
 
