@@ -7,7 +7,7 @@ import zio.console.Console
 
 object ZCqlLayer {
 
-  def default: ZLayer[Console with Clock, CassandraException, ZCqlSession] = from(shouldCreateKeyspace = true)
+  def default = from(shouldCreateKeyspace = true)
 
   def from(
     host: String = "127.0.0.1",
@@ -15,7 +15,7 @@ object ZCqlLayer {
     keyspace: String = "test",
     datacenter: String = "datacenter1",
     shouldCreateKeyspace: Boolean = false,
-  ): ZLayer[Console with Clock, CassandraException, ZCqlSession] =
+  ) =
     ZCqlManaged.from(host, port, keyspace, datacenter, shouldCreateKeyspace).toLayer
 
 }

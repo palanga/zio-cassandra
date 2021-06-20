@@ -47,7 +47,7 @@ object SimpleExample {
   /**
    * The simplest and better way of creating a session is:
    */
-  val sessionLayer: ZLayer[Console with Clock, CassandraException, ZCqlSession] =
+  val sessionLayer =
     palanga.zio.cassandra.session.layer
       .from(
         "127.0.0.1",
@@ -58,7 +58,7 @@ object SimpleExample {
   /**
    * But it's not the only way to create a session:
    */
-  val managedSession: ZManaged[Console with Clock, CassandraException, ZCqlSession.Service] =
+  val managedSession =
     palanga.zio.cassandra.session.managed
       .from(
         "127.0.0.1",
@@ -66,7 +66,7 @@ object SimpleExample {
         "painters_keyspace",
       )
 
-  val rawSession: ZIO[Console with Clock, CassandraException, ZCqlSession.Service] =
+  val rawSession =
     palanga.zio.cassandra.session.raw
       .from(
         "127.0.0.1",
