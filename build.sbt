@@ -1,6 +1,6 @@
 name := "zio-cassandra"
 
-val ZIO_CASSANDRA_VERSION = "0.4.1"
+val ZIO_CASSANDRA_VERSION = "0.5.0"
 
 val MAIN_SCALA = "2.13.6"
 val ALL_SCALA  = Seq(MAIN_SCALA)
