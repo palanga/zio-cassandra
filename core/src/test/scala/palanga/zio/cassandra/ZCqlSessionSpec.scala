@@ -8,8 +8,6 @@ import zio.ZIO
 import zio.test.Assertion._
 import zio.test._
 
-import scala.language.postfixOps
-
 object ZCqlSessionSpec {
 
   private val tableName = "painters_by_country"

@@ -6,8 +6,6 @@ import palanga.zio.cassandra.{ CassandraException, ZStatement }
 import zio._
 import zio.stream.Stream
 
-import scala.language.postfixOps
-
 object ZCqlSession {
   trait Service {
     def close: IO[SessionCloseException, Unit]

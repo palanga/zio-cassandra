@@ -1,10 +1,5 @@
 package palanga.zio.cassandra.session
 
-import palanga.zio.cassandra.{ CassandraException, ZCqlSession }
-import zio.ZLayer
-import zio.clock.Clock
-import zio.console.Console
-
 object ZCqlLayer {
 
   def default = from(shouldCreateKeyspace = true)

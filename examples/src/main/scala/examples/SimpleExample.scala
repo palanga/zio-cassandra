@@ -3,10 +3,8 @@ package examples
 import com.datastax.oss.driver.api.core.CqlSession
 import palanga.zio.cassandra.ZStatement.StringOps
 import palanga.zio.cassandra.session.ZCqlSession
-import palanga.zio.cassandra.{ CassandraException, ZCqlSession, module => zCqlSession }
-import zio.clock.Clock
-import zio.console.Console
-import zio.{ ZIO, ZLayer, ZManaged }
+import palanga.zio.cassandra.{ CassandraException, module => zCqlSession }
+import zio.ZIO
 
 import java.net.InetSocketAddress
 

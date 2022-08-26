@@ -1,9 +1,6 @@
 package palanga.zio.cassandra.session
 
-import palanga.zio.cassandra.CassandraException
-import zio.ZManaged
-import zio.clock.Clock
-import zio.console.{ putStrLn, Console }
+import zio.console.putStrLn
 
 private[cassandra] object ZCqlManaged {
 

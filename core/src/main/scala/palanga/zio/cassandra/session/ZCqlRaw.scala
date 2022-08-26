@@ -3,10 +3,8 @@ package palanga.zio.cassandra.session
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.{ PreparedStatement, SimpleStatement }
 import palanga.zio.cassandra.CassandraException.SessionOpenException
-import palanga.zio.cassandra.CassandraException
 import zio.Schedule.{ recurs, spaced }
-import zio.clock.Clock
-import zio.console.{ putStrLn, Console }
+import zio.console.putStrLn
 import zio.duration._
 import zio.{ Ref, ZIO }
 
