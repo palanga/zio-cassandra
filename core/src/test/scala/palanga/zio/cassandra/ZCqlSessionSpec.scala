@@ -85,7 +85,9 @@ object ZCqlSessionSpec {
         val berthe = Painter(FRANCE, "Berthe Morisot")
         val monet  = Painter(FRANCE, "Claude Monet")
         for {
-          insert :: select :: Nil <- preparePar(insertStatement.statement, selectByCountryAndNameStatement.statement)
+          prepared <- preparePar(insertStatement.statement, selectByCountryAndNameStatement.statement)
+          insert = prepared.head
+          select = prepared.tail.head
           _                       <- executePar(insert.bind(berthe.country, berthe.name), insert.bind(monet.country, monet.name))
           rss                     <- executePar(select.bind(berthe.country, berthe.name), select.bind(monet.country, monet.name))
           b :: m :: Nil           <- ZIO effect rss.map(_.one()).map(painterDecoder)

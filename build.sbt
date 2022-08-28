@@ -2,7 +2,7 @@ name := "zio-cassandra"
 
 val ZIO_CASSANDRA_VERSION = "0.5.0"
 
-val MAIN_SCALA = "2.13.6"
+val MAIN_SCALA = "3.1.3"
 val ALL_SCALA  = Seq(MAIN_SCALA)
 
 val DATASTAX_JAVA_CASSANDRA_VERSION = "4.12.0"
@@ -58,7 +58,6 @@ lazy val core =
         "dev.zio"         %% "zio-streams"      % ZIO_VERSION,
         "dev.zio"         %% "zio-test"         % ZIO_VERSION % "test",
         "dev.zio"         %% "zio-test-sbt"     % ZIO_VERSION % "test",
-        compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       ),
     )
     .settings(
@@ -70,9 +69,6 @@ lazy val examples =
   (project in file("examples"))
     .settings(name := "examples")
     .settings(commonSettings)
-    .settings(
-      libraryDependencies ++= Seq(compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"))
-    )
     .settings(
       Test / fork := true,
       run / fork := true,
@@ -89,14 +85,9 @@ val commonSettings = Def.settings(
     "-encoding",
     "UTF-8",
     "-explaintypes",
-    "-Yrangepos",
     "-feature",
     "-language:higherKinds",
     "-language:existentials",
     "-unchecked",
-    "-Xlint:_,-type-parameter-shadow",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-unused:patvars,-implicits",
-    "-Ywarn-value-discard",
   ),
 )

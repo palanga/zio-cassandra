@@ -1,12 +1,12 @@
 package palanga.zio.cassandra.session
 
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql.{ PreparedStatement, SimpleStatement }
+import com.datastax.oss.driver.api.core.cql.{PreparedStatement, SimpleStatement}
 import palanga.zio.cassandra.CassandraException.SessionOpenException
-import zio.Schedule.{ recurs, spaced }
+import zio.Schedule.{recurs, spaced}
 import zio.console.putStrLn
-import zio.duration._
-import zio.{ Ref, ZIO }
+import zio.duration.*
+import zio.{Ref, ZIO}
 
 import java.net.InetSocketAddress
 import scala.language.postfixOps
@@ -50,7 +50,7 @@ private[session] object ZCqlRaw {
     Ref
       .make(Map.empty[SimpleStatement, PreparedStatement])
       .flatMap(ZIO effect new LiveZCqlSession(self, _))
-      .mapError(SessionOpenException)
+      .mapError(SessionOpenException.apply)
 
   private def createKeyspace(keyspace: String) =
     SimpleStatement

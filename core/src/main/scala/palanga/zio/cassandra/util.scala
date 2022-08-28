@@ -13,9 +13,9 @@ private[cassandra] object util {
     ZIO effect s.decodeUnsafe(row) mapError (DecodeException(s)(_))
 
   def paginate(initial: AsyncResultSet): Stream[Throwable, AsyncResultSet] =
-    ZStream.paginateM(initial) { current: AsyncResultSet =>
+    ZStream.paginateM(initial) { current =>
       if (!current.hasMorePages) ZIO succeed (current -> None)
-      else ZIO fromCompletionStage current.fetchNextPage() map { next: AsyncResultSet => current -> Some(next) }
+      else ZIO fromCompletionStage current.fetchNextPage() map { next => current -> Some(next) }
     }
 
   object Chunk {

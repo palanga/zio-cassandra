@@ -14,7 +14,7 @@ final class LiveZCqlSession private[cassandra] (
 ) extends ZCqlSession.Service {
 
   override def close: IO[SessionCloseException, Unit] =
-    ZIO effect session.close() mapError SessionCloseException
+    ZIO effect session.close() mapError SessionCloseException.apply
 
   override def execute(s: ZStatement[_]): IO[CassandraException, AsyncResultSet] =
     preparedStatements.get.flatMap(_.get(s.statement).fold(prepare(s) flatMap executePrepared(s))(executePrepared(s)))
