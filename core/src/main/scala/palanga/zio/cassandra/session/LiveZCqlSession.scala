@@ -50,13 +50,13 @@ final class LiveZCqlSession private[cassandra] (
     ZIO collectAllPar ss.map(prepare).toList
 
   override def stream[Out](s: ZStatement[Out]): Stream[CassandraException, Chunk[Out]] =
-    streamResultSet(s).mapZIO(util.Chunk fromJavaIterable _.currentPage() mapZIO decode(s) mapError DecodeException(s))
+    streamResultSet(s).mapZIO(Chunk fromJavaIterable _.currentPage() mapZIO decode(s) mapError DecodeException(s))
 
   override def stream(s: BoundStatement): Stream[CassandraException, Chunk[Row]] =
-    streamResultSet(s).map(util.Chunk fromJavaIterable _.currentPage())
+    streamResultSet(s).map(Chunk fromJavaIterable _.currentPage())
 
   override def stream(s: SimpleStatement): Stream[CassandraException, Chunk[Row]] =
-    streamResultSet(s).map(util.Chunk fromJavaIterable _.currentPage())
+    streamResultSet(s).map(Chunk fromJavaIterable _.currentPage())
 
   override def streamResultSet(s: ZStatement[_]): Stream[CassandraException, AsyncResultSet] =
     ZStream

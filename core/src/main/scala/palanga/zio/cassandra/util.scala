@@ -3,9 +3,7 @@ package palanga.zio.cassandra
 import com.datastax.oss.driver.api.core.cql.{ AsyncResultSet, Row }
 import palanga.zio.cassandra.CassandraException.DecodeException
 import zio.stream.{ Stream, ZStream }
-import zio.{ Chunk, IO, ZIO }
-
-import scala.reflect.ClassTag
+import zio.{ IO, ZIO }
 
 private[cassandra] object util {
 
@@ -17,13 +15,5 @@ private[cassandra] object util {
       if (!current.hasMorePages) ZIO succeed (current -> None)
       else ZIO fromCompletionStage current.fetchNextPage() map { next => current -> Some(next) }
     }
-
-  object Chunk {
-    import scala.jdk.CollectionConverters.IterableHasAsScala
-    // See https://github.com/zio/zio/issues/3822
-    def fromJavaIterable[A: ClassTag](iterable: java.lang.Iterable[A]): Chunk[A] =
-      zio.Chunk.fromJavaIterable(iterable)
-      zio.Chunk fromArray iterable.asScala.toArray
-  }
 
 }

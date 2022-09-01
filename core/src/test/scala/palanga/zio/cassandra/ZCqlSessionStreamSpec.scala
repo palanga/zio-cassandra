@@ -1,11 +1,11 @@
 package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
-import palanga.zio.cassandra.module._
+import palanga.zio.cassandra.module.*
 import palanga.zio.cassandra.session.ZCqlSession
 import zio.ZIO
-import zio.test.Assertion._
-import zio.test._
+import zio.test.*
+import zio.test.Assertion.*
 
 object ZCqlSessionStreamSpec {
 
@@ -26,7 +26,7 @@ object ZCqlSessionStreamSpec {
       )
       .build
 
-  def initialize(session: ZCqlSession.Service) =
+  def initialize(session: ZCqlSession) =
     session.execute(dropTable) *> session.execute(createTable) *> populate(session)
 
   private val insertStatement =
@@ -53,7 +53,7 @@ object ZCqlSessionStreamSpec {
   private val latinPainters    = painters.filter(_.region == LATIN_AMERICA)
   private val europeanPainters = painters.filter(_.region == EUROPE)
 
-  private def populate(session: ZCqlSession.Service) =
+  private def populate(session: ZCqlSession) =
     session
       .prepare(insertStatement)
       .flatMap(ps => session.executePar(painters.map(painter => ps.bind(painter.region, painter.name)): _*))
@@ -79,7 +79,7 @@ object ZCqlSessionStreamSpec {
     suite("ZCqlSession suite")(
       test("stream") {
 
-        val s         = stream(selectByRegion(LATIN_AMERICA))
+        val s         = ZCqlSession.stream(selectByRegion(LATIN_AMERICA))
         val sPageSize = s.runHead.map(_.fold(0)(_.size))
 
         val results =
@@ -91,9 +91,10 @@ object ZCqlSessionStreamSpec {
       },
       test("stream prepared") {
 
-        prepare(selectByRegionStatement.statement)
+        ZCqlSession
+          .prepare(selectByRegionStatement.statement)
           .map(_.bind(LATIN_AMERICA))
-          .flatMap(stream(_).runCollect)
+          .flatMap(ZCqlSession.untyped.stream(_).runCollect)
           .map(pages =>
             assert(pages.headOption.fold(0)(_.size))(equalTo(PAGE_SIZE)) &&
               assert(pages.flatten.map(painterDecoder))(hasSameElements(latinPainters))
@@ -102,7 +103,9 @@ object ZCqlSessionStreamSpec {
       },
       test("stream simple") {
 
-        stream(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(LATIN_AMERICA))).runCollect
+        ZCqlSession.untyped
+          .stream(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(LATIN_AMERICA)))
+          .runCollect
           .map(pages =>
             assert(pages.headOption.fold(0)(_.size))(equalTo(PAGE_SIZE)) &&
               assert(pages.flatten.map(painterDecoder))(hasSameElements(latinPainters))
@@ -113,7 +116,9 @@ object ZCqlSessionStreamSpec {
 
         import scala.jdk.CollectionConverters.IterableHasAsScala
 
-        streamResultSet(selectByRegion(EUROPE)).runCollect
+        ZCqlSession.untyped
+          .streamResultSet(selectByRegion(EUROPE))
+          .runCollect
           .map(_.count(_.currentPage().asScala.nonEmpty))
           .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
 
@@ -122,9 +127,10 @@ object ZCqlSessionStreamSpec {
 
         import scala.jdk.CollectionConverters.IterableHasAsScala
 
-        prepare(selectByRegionStatement.statement)
+        ZCqlSession
+          .prepare(selectByRegionStatement.statement)
           .map(_.bind(EUROPE))
-          .flatMap(streamResultSet(_).runCollect)
+          .flatMap(ZCqlSession.untyped.streamResultSet(_).runCollect)
           .map(_.count(_.currentPage().asScala.nonEmpty))
           .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
 
@@ -133,7 +139,9 @@ object ZCqlSessionStreamSpec {
 
         import scala.jdk.CollectionConverters.IterableHasAsScala
 
-        streamResultSet(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(EUROPE))).runCollect
+        ZCqlSession.untyped
+          .streamResultSet(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(EUROPE)))
+          .runCollect
           .map(_.count(_.currentPage().asScala.nonEmpty))
           .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
 
