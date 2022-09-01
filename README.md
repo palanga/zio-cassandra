@@ -1,6 +1,12 @@
 zio-cassandra
 =============
 
+[![Release Artifacts][Badge-SonatypeReleases]][Link-SonatypeReleases]
+
+[Link-SonatypeReleases]: https://s01.oss.sonatype.org/content/repositories/releases/io/github/palanga/zio-cassandra_3/ "Sonatype Releases"
+[Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/s01.oss.sonatype.org/io.github.palanga/zio-cassandra_3.svg "Sonatype Releases"
+
+
 A ZIO wrapper around the Datastax Cassandra driver for Java
 -----------------------------------------------------------
 
