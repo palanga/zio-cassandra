@@ -17,7 +17,11 @@ addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 lazy val root =
   (project in file("."))
     .settings(
-      sonatypeBundleRelease / skip := true
+      organization                 := "io.github.palanga",
+      publish / skip               := true,
+      publishTo / skip             := true,
+      sonatypeBundleRelease / skip := true,
+      sonatypeCredentialHost       := "s01.oss.sonatype.org",
     )
     .aggregate(
       core,
@@ -54,7 +58,11 @@ lazy val examples =
   (project in file("examples"))
     .settings(
       name                         := "examples",
+      organization                 := "io.github.palanga",
+      publish / skip               := true,
+      publishTo / skip             := true,
       sonatypeBundleRelease / skip := true,
+      sonatypeCredentialHost       := "s01.oss.sonatype.org",
       Test / fork                  := true,
       run / fork                   := true,
       commonSettings,
