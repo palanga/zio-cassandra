@@ -11,17 +11,17 @@ val ZIO_VERSION = "2.0.1"
 
 inThisBuild(
   List(
-    organization := "dev.palanga",
-    homepage := Some(url("https://github.com/palanga/zio-cassandra")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    organization             := "dev.palanga",
+    homepage                 := Some(url("https://github.com/palanga/zio-cassandra")),
+    licenses                 := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     Test / parallelExecution := false,
-    scmInfo := Some(
+    scmInfo                  := Some(
       ScmInfo(
         url("https://github.com/palanga/zio-cassandra/"),
         "scm:git:git@github.com:palanga/zio-cassandra.git",
       )
     ),
-    developers := List(
+    developers               := List(
       Developer(
         "palanga",
         "Andrés González",
@@ -29,7 +29,7 @@ inThisBuild(
         url("https://github.com/palanga"),
       )
     ),
-    publishTo := Some("Artifactory Realm" at "https://palanga.jfrog.io/artifactory/maven/"),
+    publishTo                := Some("Artifactory Realm" at "https://palanga.jfrog.io/artifactory/maven/"),
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
   )
 )
@@ -62,7 +62,7 @@ lazy val core =
     )
     .settings(
       Test / fork := true,
-      run / fork := true,
+      run / fork  := true,
     )
 
 lazy val examples =
@@ -70,16 +70,16 @@ lazy val examples =
     .settings(name := "examples")
     .settings(commonSettings)
     .settings(
-      Test / fork := true,
-      run / fork := true,
+      Test / fork    := true,
+      run / fork     := true,
       publish / skip := true,
     )
     .dependsOn(core)
 
 val commonSettings = Def.settings(
-  scalaVersion := MAIN_SCALA,
+  scalaVersion       := MAIN_SCALA,
   crossScalaVersions := ALL_SCALA,
-  versionScheme := Some("strict"),
+  versionScheme      := Some("strict"),
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
