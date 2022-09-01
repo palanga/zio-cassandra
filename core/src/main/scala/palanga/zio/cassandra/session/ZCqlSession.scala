@@ -5,7 +5,7 @@ import com.datastax.oss.driver.api.core.cql.*
 import palanga.zio.cassandra.CassandraException.*
 import palanga.zio.cassandra.{ CassandraException, ZCqlSession, ZStatement }
 import zio.*
-import zio.Console.printLine
+import zio.Console.{ printLine, printLineError }
 import zio.Schedule.{ recurs, spaced }
 import zio.stream.{ Stream, ZStream }
 
@@ -30,6 +30,9 @@ trait ZCqlSession:
   def streamResultSet(s: BoundStatement): Stream[CassandraException, AsyncResultSet]
   def streamResultSet(s: SimpleStatement): Stream[CassandraException, AsyncResultSet]
 
+/**
+ * TODO we should use a logger instead of Console.printLine
+ */
 object ZCqlSession:
 
   def openDefault(): ZIO[Scope, SessionOpenException, ZCqlSession] = open()
@@ -39,7 +42,7 @@ object ZCqlSession:
     port: Int = 9042,
     keyspace: String = "test",
     datacenter: String = "datacenter1",
-    shouldCreateKeyspace: Boolean = false,
+    shouldCreateKeyspace: Boolean = true,
   ): ZIO[Scope, SessionOpenException, ZCqlSession] =
     (for {
       _          <- printLine("Opening cassandra session...")
@@ -73,8 +76,8 @@ object ZCqlSession:
       session    <- ZIO.attempt(LiveZCqlSession(underlying, statements))
       _          <- printLine("Cassandra session is ready")
     yield session)
-      .tapError(t => printLine("Failed trying to build cql session: " + t.getMessage))
-      .tapError(_ => printLine("Retrying in one second..."))
+      .tapError(t => printLineError("Failed trying to build cql session: " + t.getMessage))
+      .tapError(_ => printLineError("Retrying in one second..."))
       .mapError(SessionOpenException.apply)
       .retry(spaced(1 second) && recurs(9))
       .withFinalizer(closeSession(_))
@@ -149,7 +152,7 @@ object ZCqlSession:
       _ <- session.close
       _ <- printLine("Closed cassandra session")
     } yield ())
-      .catchAll(t => printLine("Failed trying to close cassandra session:\n" + t.getMessage).ignore)
+      .catchAll(t => printLineError("Failed trying to close cassandra session:\n" + t.getMessage).ignore)
 
   private def createKeyspace(keyspace: String) =
     SimpleStatement
