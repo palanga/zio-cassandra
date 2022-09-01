@@ -2,8 +2,6 @@ import xerial.sbt.Sonatype._
 
 name := "zio-cassandra"
 
-//val ZIO_CASSANDRA_VERSION = "0.6.0"
-
 val MAIN_SCALA = "3.1.3"
 val ALL_SCALA  = Seq(MAIN_SCALA)
 
@@ -33,7 +31,6 @@ lazy val core =
     .settings(
       name                   := "zio-cassandra",
       organization           := "io.github.palanga",
-//      version                := ZIO_CASSANDRA_VERSION,
       publishMavenStyle      := true,
       licenses               := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
       description            := "A ZIO wrapper around the Datastax Cassandra driver for Java",

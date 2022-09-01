@@ -1,20 +1,19 @@
 zio-cassandra
 =============
 
-A ZIO wrapper around the Datastax Cassandra driver
---------------------------------------------------
+A ZIO wrapper around the Datastax Cassandra driver for Java
+-----------------------------------------------------------
 
-* Scala 2.13.6
-* Datastax java driver 4.12.0
-* ZIO 1.0.9
+* Scala 3.1.3
+* Datastax java driver 4.14.1
+* ZIO 2.0.1
 
 Installation
 ------------
 
-Add this to your `build.sbt` file
+We publish to maven central so you just have to add this to your `build.sbt` file
 ```sbt
-resolvers += "Artifactory" at "https://palanga.jfrog.io/artifactory/maven/"
-libraryDependencies += "dev.palanga" %% "zio-cassandra" % "version"
+libraryDependencies += "io.github.palanga" %% "zio-cassandra" % "0.6.0"
 ```
 
 Usage
@@ -111,7 +110,7 @@ object SimpleExample {
 Testing:
 --------
 
-* To run tests: `./sbt` then `test`
+* To run tests: `sbt test`
 
 Troubleshooting:
 ----------------
