@@ -2,11 +2,11 @@ package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
 import palanga.zio.cassandra.CassandraException.EmptyResultSetException
-import palanga.zio.cassandra.module._
+import palanga.zio.cassandra.module.*
 import palanga.zio.cassandra.session.ZCqlSession
 import zio.ZIO
-import zio.test.Assertion._
-import zio.test._
+import zio.test.*
+import zio.test.Assertion.*
 
 object ZCqlSessionSpec {
 
@@ -51,26 +51,26 @@ object ZCqlSessionSpec {
 
   val testSuite =
     suite("ZCqlSession suite")(
-      testM("execute") {
+      test("execute") {
         val frida = Painter(MEXICO, "Frida Kahlo")
         execute(insert(frida))
           .zipRight(execute(selectByCountryAndName(frida.country, frida.name)))
-          .flatMap(rs => ZIO effect painterDecoder(rs.one()))
+          .flatMap(rs => ZIO attempt painterDecoder(rs.one()))
           .map(assert(_)(equalTo(frida)))
       },
-      testM("execute head option") {
+      test("execute head option") {
         val xul = Painter(ARGENTINA, "Xul Solar")
         execute(insert(xul)) *>
           executeHeadOption(selectByCountryAndName(xul.country, xul.name)) map
           (assert(_)(isSome(equalTo(xul))))
       },
-      testM("execute head or fail succeed case") {
+      test("execute head or fail succeed case") {
         val tarsila = Painter(BRAZIL, "Tarsila do Amaral")
         execute(insert(tarsila)) *>
           executeHeadOrFail(selectByCountryAndName(tarsila.country, tarsila.name)) map
           (assert(_)(equalTo(tarsila)))
       },
-      testM("execute prepared") {
+      test("execute prepared") {
         val benito = Painter(ARGENTINA, "Benito Quinquela Martín")
         prepare(insertStatement.statement)
           .map(_.bind(benito.country, benito.name))
@@ -78,30 +78,32 @@ object ZCqlSessionSpec {
           .zipRight(prepare(selectByCountryAndNameStatement.statement))
           .map(_.bind(benito.country, benito.name))
           .flatMap(execute)
-          .flatMap(rs => ZIO effect painterDecoder(rs.one()))
+          .flatMap(rs => ZIO attempt painterDecoder(rs.one()))
           .map(assert(_)(equalTo(benito)))
       },
-      testM("execute prepared par") {
+      test("execute prepared par") {
         val berthe = Painter(FRANCE, "Berthe Morisot")
         val monet  = Painter(FRANCE, "Claude Monet")
         for {
-          prepared <- preparePar(insertStatement.statement, selectByCountryAndNameStatement.statement)
-          insert = prepared.head
-          select = prepared.tail.head
-          _                       <- executePar(insert.bind(berthe.country, berthe.name), insert.bind(monet.country, monet.name))
-          rss                     <- executePar(select.bind(berthe.country, berthe.name), select.bind(monet.country, monet.name))
-          b :: m :: Nil           <- ZIO effect rss.map(_.one()).map(painterDecoder)
-        } yield assert(b)(equalTo(berthe)) && assert(m)(equalTo(monet))
+          prepared    <- preparePar(insertStatement.statement, selectByCountryAndNameStatement.statement)
+          insert       = prepared.head
+          select       = prepared.tail.head
+          _           <- executePar(insert.bind(berthe.country, berthe.name), insert.bind(monet.country, monet.name))
+          rss         <- executePar(select.bind(berthe.country, berthe.name), select.bind(monet.country, monet.name))
+          results     <- ZIO attempt rss.map(_.one()).map(painterDecoder)
+          bertheResult = results.head
+          monetResult  = results.tail.head
+        } yield assert(bertheResult)(equalTo(berthe)) && assert(monetResult)(equalTo(monet))
       },
-      testM("execute simple") {
+      test("execute simple") {
         val remedios                               = Painter(SPAIN, "Remedios Varo")
         val remediosValues: java.util.List[AnyRef] = java.util.List.of(remedios.country, remedios.name)
         execute(insertStatement.statement.setPositionalValues(remediosValues))
           .zipRight(execute(selectByCountryAndNameStatement.statement.setPositionalValues(remediosValues)))
-          .flatMap(rs => ZIO effect painterDecoder(rs.one()))
+          .flatMap(rs => ZIO attempt painterDecoder(rs.one()))
           .map(assert(_)(equalTo(remedios)))
       },
-      testM("execute simple par") {
+      test("execute simple par") {
 
         val dali                                 = Painter(SPAIN, "Salvador Dalí")
         val leBrun                               = Painter(FRANCE, "Élisabeth Le Brun")
@@ -116,22 +118,22 @@ object ZCqlSessionSpec {
             selectByCountryAndNameStatement.statement.setPositionalValues(daliValues),
             selectByCountryAndNameStatement.statement.setPositionalValues(leBrunValues),
           )
-        ).flatMap(rss => ZIO effect rss.map(_.one()).map(painterDecoder))
+        ).flatMap(rss => ZIO attempt rss.map(_.one()).map(painterDecoder))
           .map { case d :: l :: Nil => assert(d)(equalTo(dali)) && assert(l)(equalTo(leBrun)) }
 
       },
-      testM("prepare") {
+      test("prepare") {
         prepare(insertStatement.statement) map (_.getQuery) map (assert(_)(equalTo(insertStatement.statement.getQuery)))
       },
-      testM("prepare par") {
+      test("prepare par") {
         preparePar(insertStatement.statement, selectByCountryAndNameStatement.statement).map {
           case insert :: select :: Nil =>
             assert(insert.getQuery)(equalTo(insertStatement.statement.getQuery)) &&
-              assert(select.getQuery)(equalTo(selectByCountryAndNameStatement.statement.getQuery))
+            assert(select.getQuery)(equalTo(selectByCountryAndNameStatement.statement.getQuery))
         }
       },
-      testM("execute head or fail failed case") {
-        executeHeadOrFail(selectByCountryAndName(ARGENTINA, "nik chorro")).run map
+      test("execute head or fail failed case") {
+        executeHeadOrFail(selectByCountryAndName(ARGENTINA, "nik chorro")).exit map
           (assert(_)(fails(isSubtype[EmptyResultSetException](anything))))
       },
     )

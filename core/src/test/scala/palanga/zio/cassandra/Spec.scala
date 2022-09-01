@@ -1,13 +1,12 @@
 package palanga.zio.cassandra
 
-import zio.clock.Clock
-import zio.console.Console
-import zio.test.{ DefaultRunnableSpec, TestAspect, TestFailure }
+import zio.test.*
+import zio.*
 
-object Spec extends DefaultRunnableSpec {
+object Spec extends ZIOSpecDefault {
 
   private val dependencies =
-    Console.live ++ Clock.live >>> session.layer.default.tap { sessionLayer =>
+    ZLayer.scoped(Live.live(session.ZCqlSession.openDefault())).tap { sessionLayer =>
       val session = sessionLayer.get
       ZCqlSessionSpec.initialize(session) <&> ZCqlSessionStreamSpec.initialize(session)
     }

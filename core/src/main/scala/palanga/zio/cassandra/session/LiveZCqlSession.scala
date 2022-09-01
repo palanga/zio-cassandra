@@ -11,10 +11,10 @@ import zio.{ Chunk, IO, Ref, ZIO }
 final class LiveZCqlSession private[cassandra] (
   private val session: CqlSession,
   private val preparedStatements: Ref[Map[SimpleStatement, PreparedStatement]],
-) extends ZCqlSession.Service {
+) extends ZCqlSession {
 
   override def close: IO[SessionCloseException, Unit] =
-    ZIO effect session.close() mapError SessionCloseException.apply
+    ZIO attempt session.close() mapError SessionCloseException.apply
 
   override def execute(s: ZStatement[_]): IO[CassandraException, AsyncResultSet] =
     preparedStatements.get.flatMap(_.get(s.statement).fold(prepare(s) flatMap executePrepared(s))(executePrepared(s)))
@@ -22,7 +22,7 @@ final class LiveZCqlSession private[cassandra] (
   override def executeHeadOption[Out](s: ZStatement[Out]): IO[CassandraException, Option[Out]] =
     execute(s)
       .map(result => Option(result.one()))
-      .flatMap(maybeRow => ZIO effect maybeRow.map(s.decodeUnsafe) mapError DecodeException(s))
+      .flatMap(maybeRow => ZIO attempt maybeRow.map(s.decodeUnsafe) mapError DecodeException(s))
 
   override def executeHeadOrFail[Out](s: ZStatement[Out]): IO[CassandraException, Out] =
     execute(s).flatMap { rs =>
@@ -50,7 +50,7 @@ final class LiveZCqlSession private[cassandra] (
     ZIO collectAllPar ss.map(prepare).toList
 
   override def stream[Out](s: ZStatement[Out]): Stream[CassandraException, Chunk[Out]] =
-    streamResultSet(s).mapM(util.Chunk fromJavaIterable _.currentPage() mapM decode(s) mapError DecodeException(s))
+    streamResultSet(s).mapZIO(util.Chunk fromJavaIterable _.currentPage() mapZIO decode(s) mapError DecodeException(s))
 
   override def stream(s: BoundStatement): Stream[CassandraException, Chunk[Row]] =
     streamResultSet(s).map(util.Chunk fromJavaIterable _.currentPage())
@@ -60,17 +60,17 @@ final class LiveZCqlSession private[cassandra] (
 
   override def streamResultSet(s: ZStatement[_]): Stream[CassandraException, AsyncResultSet] =
     ZStream
-      .fromEffect(execute(s))
+      .fromZIO(execute(s))
       .flatMap(paginate(_) mapError QueryExecutionException(s.statement.getQuery))
 
   override def streamResultSet(s: BoundStatement): Stream[CassandraException, AsyncResultSet] =
     ZStream
-      .fromEffect(execute(s))
+      .fromZIO(execute(s))
       .flatMap(paginate(_) mapError QueryExecutionException(s.getPreparedStatement.getQuery))
 
   override def streamResultSet(s: SimpleStatement): Stream[CassandraException, AsyncResultSet] =
     ZStream
-      .fromEffect(execute(s))
+      .fromZIO(execute(s))
       .flatMap(paginate(_) mapError QueryExecutionException(s.getQuery))
 
   private def executePrepared(s: ZStatement[_])(ps: PreparedStatement): IO[QueryExecutionException, AsyncResultSet] =

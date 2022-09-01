@@ -77,7 +77,7 @@ object ZCqlSessionStreamSpec {
 
   val testSuite =
     suite("ZCqlSession suite")(
-      testM("stream") {
+      test("stream") {
 
         val s         = stream(selectByRegion(LATIN_AMERICA))
         val sPageSize = s.runHead.map(_.fold(0)(_.size))
@@ -89,7 +89,7 @@ object ZCqlSessionStreamSpec {
         ZIO.collectAllPar(results).map(_.reduce(_ && _))
 
       },
-      testM("stream prepared") {
+      test("stream prepared") {
 
         prepare(selectByRegionStatement.statement)
           .map(_.bind(LATIN_AMERICA))
@@ -100,7 +100,7 @@ object ZCqlSessionStreamSpec {
           )
 
       },
-      testM("stream simple") {
+      test("stream simple") {
 
         stream(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(LATIN_AMERICA))).runCollect
           .map(pages =>
@@ -109,7 +109,7 @@ object ZCqlSessionStreamSpec {
           )
 
       },
-      testM("stream result set") {
+      test("stream result set") {
 
         import scala.jdk.CollectionConverters.IterableHasAsScala
 
@@ -118,7 +118,7 @@ object ZCqlSessionStreamSpec {
           .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
 
       },
-      testM("stream result set prepared") {
+      test("stream result set prepared") {
 
         import scala.jdk.CollectionConverters.IterableHasAsScala
 
@@ -129,7 +129,7 @@ object ZCqlSessionStreamSpec {
           .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
 
       },
-      testM("stream result set simple") {
+      test("stream result set simple") {
 
         import scala.jdk.CollectionConverters.IterableHasAsScala
 

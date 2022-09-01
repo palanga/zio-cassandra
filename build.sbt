@@ -7,7 +7,7 @@ val ALL_SCALA  = Seq(MAIN_SCALA)
 
 val DATASTAX_JAVA_CASSANDRA_VERSION = "4.14.1"
 
-val ZIO_VERSION = "1.0.9"
+val ZIO_VERSION = "2.0.1"
 
 inThisBuild(
   List(
