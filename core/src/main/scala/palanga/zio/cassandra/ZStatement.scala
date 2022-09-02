@@ -1,11 +1,16 @@
 package palanga.zio.cassandra
 
-import com.datastax.oss.driver.api.core.cql.{ BoundStatement, PreparedStatement, Row, SimpleStatement }
+import com.datastax.oss.driver.api.core.cql.*
 
 object ZStatement {
 
   def apply(query: String): ZSimpleStatement[Row] =
     new ZSimpleStatement[Row](SimpleStatement.builder(query).build(), bindNothing, identityRow)
+
+  def fromString(query: String): ZSimpleStatement[Row] = apply(query)
+
+  def fromDatastaxStatement(statement: SimpleStatement): ZSimpleStatement[Row] =
+    ZSimpleStatement[Row](statement, bindNothing, identityRow)
 
   implicit class StringOps(private val self: String) extends AnyVal {
     def toStatement: ZSimpleStatement[Row] = apply(self)
@@ -16,7 +21,7 @@ object ZStatement {
     def decode[T](f: Row => T): ZSimpleStatement[T] = new ZSimpleStatement[T](self, _.bind(), f)
   }
 
-  private[cassandra] val identityRow: Row => Row                          = row => row
+  private[cassandra] val identityRow: Row => Row                          = identity
   private[cassandra] val bindNothing: PreparedStatement => BoundStatement = _.bind()
 
 }

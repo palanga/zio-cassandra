@@ -13,8 +13,13 @@ import zio.stream.{ Stream, ZStream }
 import java.net.InetSocketAddress
 import scala.language.postfixOps
 
-object LiveZCqlSession:
+/**
+ * A Cassandra session that need minimal configuration. The first time a statement is executed by this session it is
+ * automatically prepared and cached for further use.
+ */
+object AutoZCqlSession:
 
+  // TODO set query timeout
   def openDefault(): ZIO[Scope, SessionOpenException, ZCqlSession] = open()
 
   def open(
@@ -29,7 +34,7 @@ object LiveZCqlSession:
       statements <- Ref.make(Map.empty[SimpleStatement, PreparedStatement])
       session    <- ZIO
                       .attempt(
-                        LiveZCqlSession(
+                        AutoZCqlSession(
                           CqlSession
                             .builder()
                             .addContactPoint(new InetSocketAddress(host, port))
@@ -49,11 +54,11 @@ object LiveZCqlSession:
       .retry(spaced(1 second) && recurs(9))
       .withFinalizer(closeSession(_))
 
-  def openFromCqlSession(underlying: => CqlSession): ZIO[Scope, SessionOpenException, ZCqlSession] =
+  def openFromDatastaxSession(underlying: => CqlSession): ZIO[Scope, SessionOpenException, ZCqlSession] =
     (for
       _          <- printLine("Opening cassandra session...")
       statements <- Ref.make(Map.empty[SimpleStatement, PreparedStatement])
-      session    <- ZIO.attempt(LiveZCqlSession(underlying, statements))
+      session    <- ZIO.attempt(AutoZCqlSession(underlying, statements))
       _          <- printLine("Cassandra session is ready")
     yield session)
       .tapError(t => printLineError("Failed trying to build cql session: " + t.getMessage))
@@ -83,7 +88,11 @@ object LiveZCqlSession:
 
   private def useKeyspace(keyspace: String) = SimpleStatement.builder(s"USE $keyspace;").build
 
-final class LiveZCqlSession private[cassandra] (
+/**
+ * @see
+ *   [[AutoZCqlSession]]
+ */
+final class AutoZCqlSession private[cassandra] (
   private val session: CqlSession,
   private val preparedStatements: Ref[Map[SimpleStatement, PreparedStatement]],
 ) extends ZCqlSession {

@@ -1,16 +1,22 @@
 package palanga.zio.cassandra
 
-import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.*
+import palanga.zio.cassandra.*
 import palanga.zio.cassandra.CassandraException.*
-import palanga.zio.cassandra.{ CassandraException, ZStatement }
 import zio.*
-import zio.Console.{ printLine, printLineError }
-import zio.Schedule.{ recurs, spaced }
-import zio.stream.{ Stream, ZStream }
+import zio.Console.*
+import zio.Schedule.*
+import zio.stream.*
 
 import java.net.InetSocketAddress
 import scala.language.postfixOps
+
+object session:
+  /**
+   * A Cassandra session that need minimal configuration. The first time a statement is executed by this session it is
+   * automatically prepared and cached for further use.
+   */
+  val auto: AutoZCqlSession.type = AutoZCqlSession
 
 trait ZCqlSession:
   def close: IO[SessionCloseException, Unit]
