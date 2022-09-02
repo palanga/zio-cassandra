@@ -1,9 +1,9 @@
 package examples
 
 import com.datastax.oss.driver.api.core.CqlSession
+import palanga.zio.cassandra
+import palanga.zio.cassandra.{CassandraException, LiveZCqlSession, ZCqlSession}
 import palanga.zio.cassandra.ZStatement.StringOps
-import palanga.zio.cassandra.session.ZCqlSession
-import palanga.zio.cassandra.{CassandraException, ZCqlSession}
 import zio.{Scope, ZIO, ZLayer}
 
 import java.net.InetSocketAddress
@@ -45,13 +45,13 @@ object SimpleExample {
    * The simplest and better way of creating a session is:
    */
   val sessionDefault: ZIO[Scope, CassandraException.SessionOpenException, ZCqlSession] =
-    palanga.zio.cassandra.session.ZCqlSession.openDefault()
+    LiveZCqlSession.openDefault()
 
   /**
    * or:
    */
   val session: ZIO[Scope, CassandraException.SessionOpenException, ZCqlSession] =
-    palanga.zio.cassandra.session.ZCqlSession.open(
+    cassandra.LiveZCqlSession.open(
       "127.0.0.1",
       9042,
       "painters_keyspace",
@@ -61,7 +61,7 @@ object SimpleExample {
    * In order to get full flexibility on how to build a session we can:
    */
   val sessionFromCqlSession: ZIO[Scope, CassandraException.SessionOpenException, ZCqlSession] =
-    palanga.zio.cassandra.session.ZCqlSession.openFromCqlSession(
+    cassandra.LiveZCqlSession.openFromCqlSession(
       CqlSession
         .builder()
         .addContactPoint(new InetSocketAddress("127.0.0.1", 9042))

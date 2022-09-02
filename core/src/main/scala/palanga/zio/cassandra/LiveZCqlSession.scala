@@ -1,12 +1,87 @@
-package palanga.zio.cassandra.session
+package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.CqlSession
-import com.datastax.oss.driver.api.core.cql._
-import palanga.zio.cassandra.CassandraException._
+import com.datastax.oss.driver.api.core.cql.*
+import palanga.zio.cassandra.CassandraException.*
 import palanga.zio.cassandra.util.{ decode, paginate }
 import palanga.zio.cassandra.{ util, CassandraException, ZStatement }
+import zio.*
+import zio.Console.{ printLine, printLineError }
+import zio.Schedule.{ recurs, spaced }
 import zio.stream.{ Stream, ZStream }
-import zio.{ Chunk, IO, Ref, ZIO }
+
+import java.net.InetSocketAddress
+import scala.language.postfixOps
+
+object LiveZCqlSession:
+
+  def openDefault(): ZIO[Scope, SessionOpenException, ZCqlSession] = open()
+
+  def open(
+    host: String = "127.0.0.1",
+    port: Int = 9042,
+    keyspace: String = "test",
+    datacenter: String = "datacenter1",
+    shouldCreateKeyspace: Boolean = true,
+  ): ZIO[Scope, SessionOpenException, ZCqlSession] =
+    (for {
+      _          <- printLine("Opening cassandra session...")
+      statements <- Ref.make(Map.empty[SimpleStatement, PreparedStatement])
+      session    <- ZIO
+                      .attempt(
+                        LiveZCqlSession(
+                          CqlSession
+                            .builder()
+                            .addContactPoint(new InetSocketAddress(host, port))
+                            .withLocalDatacenter(datacenter)
+                            .build,
+                          statements,
+                        )
+                      )
+      _          <- printLine(s"Configuring cassandra keyspace $keyspace...")
+      _          <- session execute createKeyspace(keyspace) when shouldCreateKeyspace
+      _          <- session execute useKeyspace(keyspace)
+      _          <- printLine("Cassandra session is ready")
+    } yield session)
+      .tapError(t => printLine("Failed trying to build cql session: " + t.getMessage))
+      .tapError(_ => printLine("Retrying in one second..."))
+      .mapError(SessionOpenException.apply)
+      .retry(spaced(1 second) && recurs(9))
+      .withFinalizer(closeSession(_))
+
+  def openFromCqlSession(underlying: => CqlSession): ZIO[Scope, SessionOpenException, ZCqlSession] =
+    (for
+      _          <- printLine("Opening cassandra session...")
+      statements <- Ref.make(Map.empty[SimpleStatement, PreparedStatement])
+      session    <- ZIO.attempt(LiveZCqlSession(underlying, statements))
+      _          <- printLine("Cassandra session is ready")
+    yield session)
+      .tapError(t => printLineError("Failed trying to build cql session: " + t.getMessage))
+      .tapError(_ => printLineError("Retrying in one second..."))
+      .mapError(SessionOpenException.apply)
+      .retry(spaced(1 second) && recurs(9))
+      .withFinalizer(closeSession(_))
+
+  private def closeSession(session: ZCqlSession) =
+    (for {
+      _ <- printLine("Closing cassandra session...")
+      _ <- session.close
+      _ <- printLine("Closed cassandra session")
+    } yield ())
+      .catchAll(t => printLineError("Failed trying to close cassandra session:\n" + t.getMessage).ignore)
+
+  private def createKeyspace(keyspace: String) =
+    SimpleStatement
+      .builder(
+        s"""CREATE KEYSPACE IF NOT EXISTS $keyspace WITH REPLICATION = {
+           |  'class': 'SimpleStrategy',
+           |  'replication_factor': 1
+           |};
+           |""".stripMargin
+      )
+      .build
+
+  private def useKeyspace(keyspace: String) = SimpleStatement.builder(s"USE $keyspace;").build
 
 final class LiveZCqlSession private[cassandra] (
   private val session: CqlSession,

@@ -1,8 +1,7 @@
 package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
-import palanga.zio.cassandra.module.*
-import palanga.zio.cassandra.session.ZCqlSession
+import palanga.zio.cassandra.*
 import zio.ZIO
 import zio.test.*
 import zio.test.Assertion.*

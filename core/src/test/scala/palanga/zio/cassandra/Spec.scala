@@ -6,7 +6,7 @@ import zio.*
 object Spec extends ZIOSpecDefault {
 
   private val dependencies =
-    ZLayer.scoped(Live.live(session.ZCqlSession.openDefault())).tap { sessionLayer =>
+    ZLayer.scoped(Live.live(LiveZCqlSession.openDefault())).tap { sessionLayer =>
       val session = sessionLayer.get
       ZCqlSessionSpec.initialize(session) <&> ZCqlSessionStreamSpec.initialize(session)
     }
