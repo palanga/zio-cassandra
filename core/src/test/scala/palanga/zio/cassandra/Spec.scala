@@ -12,7 +12,7 @@ object Spec extends ZIOSpecDefault {
           .openDefault()
           .tap(session => ZCqlSessionSpec.initialize(session) <&> ZCqlSessionStreamSpec.initialize(session))
       )
-    ) mapError TestFailure.fail
+    ).mapError(TestFailure.fail)
 
   override def spec =
     suite("zio cassandra suite")(
