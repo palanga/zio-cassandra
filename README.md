@@ -22,7 +22,7 @@ Installation
 We publish to maven central so you just have to add this to your `build.sbt` file
 
 ```sbt
-libraryDependencies += "io.github.palanga" %% "zio-cassandra" % "0.8.0"
+libraryDependencies += "io.github.palanga" %% "zio-cassandra" % "0.9.0"
 ```
 
 Usage
@@ -54,9 +54,9 @@ object SimpleExample {
    * parse the result.
    */
   val selectFromPaintersByRegion: ZSimpleStatement[Painter] =
-    "SELECT * FROM painters_by_region WHERE region=?;"                        // String
-      .toStatement                                                            // ZSimpleStatement[Row]
-      .decode(row => Painter(row.getString("region"), row.getString("name"))) // ZSimpleStatement[Painter]
+    "SELECT * FROM painters_by_region WHERE region=?;"                               // String
+      .toStatement                                                                   // ZSimpleStatement[Row]
+      .decodeAttempt(row => Painter(row.getString("region"), row.getString("name"))) // ZSimpleStatement[Painter]
 
   /**
    * Every chunk represents a page. It's easy to flatten them with `.flattenChunks`.
