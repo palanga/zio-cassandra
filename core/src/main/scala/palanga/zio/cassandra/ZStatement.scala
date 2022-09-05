@@ -17,7 +17,7 @@ object ZStatement {
   }
 
   implicit class SimpleStatementOps(private val self: SimpleStatement) extends AnyVal {
-    def bind(params: Any*): ZBoundStatement[Row]    = new ZBoundStatement[Row](self, _.bind(params: _*), identity)
+    def bind(params: Any*): ZBoundStatement[Row]    = new ZBoundStatement[Row](self, _.bind(params*), identity)
     def decode[T](f: Row => T): ZSimpleStatement[T] = new ZSimpleStatement[T](self, _.bind(), f)
   }
 
@@ -37,7 +37,7 @@ final class ZSimpleStatement[Out](
   private[cassandra] val bindUnsafe: PreparedStatement => BoundStatement,
   private[cassandra] val decodeUnsafe: Row => Out,
 ) extends ZStatement[Out] {
-  def bind(params: Any*): ZBoundStatement[Out]    = new ZBoundStatement[Out](statement, _.bind(params: _*), decodeUnsafe)
+  def bind(params: Any*): ZBoundStatement[Out]    = new ZBoundStatement[Out](statement, _.bind(params*), decodeUnsafe)
   def decode[T](f: Row => T): ZSimpleStatement[T] = new ZSimpleStatement[T](statement, bindUnsafe, f)
 }
 
