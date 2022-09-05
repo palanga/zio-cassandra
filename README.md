@@ -25,6 +25,11 @@ We publish to maven central so you just have to add this to your `build.sbt` fil
 libraryDependencies += "io.github.palanga" %% "zio-cassandra" % "0.9.0"
 ```
 
+If you want to use snapshots add this resolver:
+```sbt
+resolvers += "Sonatype OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
+```
+
 Usage
 -----
 
