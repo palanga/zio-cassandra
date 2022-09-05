@@ -23,9 +23,9 @@ object SimpleExample {
    * parse the result.
    */
   val selectFromPaintersByRegion: ZSimpleStatement[Painter] =
-    "SELECT * FROM painters_by_region WHERE region=?;"                        // String
-      .toStatement                                                            // ZSimpleStatement[Row]
-      .decode(row => Painter(row.getString("region"), row.getString("name"))) // ZSimpleStatement[Painter]
+    "SELECT * FROM painters_by_region WHERE region=?;"                               // String
+      .toStatement                                                                   // ZSimpleStatement[Row]
+      .decodeAttempt(row => Painter(row.getString("region"), row.getString("name"))) // ZSimpleStatement[Painter]
 
   /**
    * Every chunk represents a page. It's easy to flatten them with `.flattenChunks`.

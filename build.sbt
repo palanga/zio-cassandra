@@ -70,7 +70,8 @@ val commonSettings = Def.settings(
   crossScalaVersions := ALL_SCALA,
   versionScheme      := Some("strict"),
   scalacOptions ++= Seq(
-    "-source:future",
+    "-rewrite",
+    "-source:future-migration",
     "-deprecation",
     "-encoding",
     "UTF-8",

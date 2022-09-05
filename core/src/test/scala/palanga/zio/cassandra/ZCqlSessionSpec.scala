@@ -32,7 +32,7 @@ object ZCqlSessionSpec {
   private val insertStatement = ZStatement(s"INSERT INTO $tableName (country, name) VALUES (?,?);")
 
   private val selectByCountryAndNameStatement =
-    ZStatement(s"SELECT * FROM $tableName WHERE country=? AND name=?;").decode(painterDecoder)
+    ZStatement(s"SELECT * FROM $tableName WHERE country=? AND name=?;").decodeAttempt(painterDecoder)
 
   private val ARGENTINA = "Argentina"
   private val BRAZIL    = "Brazil"
@@ -54,19 +54,19 @@ object ZCqlSessionSpec {
         ZCqlSession.untyped
           .execute(insert(frida))
           .zipRight(ZCqlSession.untyped.execute(selectByCountryAndName(frida.country, frida.name)))
-          .flatMap(rs => ZIO attempt painterDecoder(rs.one()))
+          .flatMap(rs => ZIO `attempt` painterDecoder(rs.one()))
           .map(assert(_)(equalTo(frida)))
       },
       test("execute head option") {
         val xul = Painter(ARGENTINA, "Xul Solar")
         ZCqlSession.untyped.execute(insert(xul)) *>
-          ZCqlSession.executeHeadOption(selectByCountryAndName(xul.country, xul.name)) map
+          ZCqlSession.executeHeadOption(selectByCountryAndName(xul.country, xul.name)) `map`
           (assert(_)(isSome(equalTo(xul))))
       },
       test("execute head or fail succeed case") {
         val tarsila = Painter(BRAZIL, "Tarsila do Amaral")
         ZCqlSession.untyped.execute(insert(tarsila)) *>
-          ZCqlSession.executeHeadOrFail(selectByCountryAndName(tarsila.country, tarsila.name)) map
+          ZCqlSession.executeHeadOrFail(selectByCountryAndName(tarsila.country, tarsila.name)) `map`
           (assert(_)(equalTo(tarsila)))
       },
       test("execute prepared") {
@@ -78,7 +78,7 @@ object ZCqlSessionSpec {
           .zipRight(ZCqlSession.prepare(selectByCountryAndNameStatement.statement))
           .map(_.bind(benito.country, benito.name))
           .flatMap(ZCqlSession.untyped.execute)
-          .flatMap(rs => ZIO attempt painterDecoder(rs.one()))
+          .flatMap(rs => ZIO `attempt` painterDecoder(rs.one()))
           .map(assert(_)(equalTo(benito)))
       },
       test("execute prepared par") {
@@ -92,7 +92,7 @@ object ZCqlSessionSpec {
                            .executePar(insert.bind(berthe.country, berthe.name), insert.bind(monet.country, monet.name))
           rss         <- ZCqlSession.untyped
                            .executePar(select.bind(berthe.country, berthe.name), select.bind(monet.country, monet.name))
-          results     <- ZIO attempt rss.map(_.one()).map(painterDecoder)
+          results     <- ZIO `attempt` rss.map(_.one()).map(painterDecoder)
           bertheResult = results.head
           monetResult  = results.tail.head
         } yield assert(bertheResult)(equalTo(berthe)) && assert(monetResult)(equalTo(monet))
@@ -105,7 +105,7 @@ object ZCqlSessionSpec {
           .zipRight(
             ZCqlSession.untyped.execute(selectByCountryAndNameStatement.statement.setPositionalValues(remediosValues))
           )
-          .flatMap(rs => ZIO attempt painterDecoder(rs.one()))
+          .flatMap(rs => ZIO `attempt` painterDecoder(rs.one()))
           .map(assert(_)(equalTo(remedios)))
       },
       test("execute simple par") {
@@ -126,12 +126,12 @@ object ZCqlSessionSpec {
               selectByCountryAndNameStatement.statement.setPositionalValues(leBrunValues),
             )
           )
-          .flatMap(rss => ZIO attempt rss.map(_.one()).map(painterDecoder))
+          .flatMap(rss => ZIO `attempt` rss.map(_.one()).map(painterDecoder))
           .map { case d :: l :: Nil => assert(d)(equalTo(dali)) && assert(l)(equalTo(leBrun)) }
 
       },
       test("prepare") {
-        ZCqlSession.prepare(insertStatement.statement) map (_.getQuery) map (assert(_)(
+        ZCqlSession.prepare(insertStatement.statement) `map` (_.getQuery) `map` (assert(_)(
           equalTo(insertStatement.statement.getQuery)
         ))
       },
@@ -143,7 +143,7 @@ object ZCqlSessionSpec {
         }
       },
       test("execute head or fail failed case") {
-        ZCqlSession.executeHeadOrFail(selectByCountryAndName(ARGENTINA, "nik chorro")).exit map
+        ZCqlSession.executeHeadOrFail(selectByCountryAndName(ARGENTINA, "nik chorro")).exit `map`
           (assert(_)(fails(isSubtype[EmptyResultSetException](anything))))
       },
     )

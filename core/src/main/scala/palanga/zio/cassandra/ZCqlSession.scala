@@ -20,7 +20,7 @@ object session:
 
 trait ZCqlSession:
   def close: IO[SessionCloseException, Unit]
-  def execute(s: ZStatement[_]): IO[CassandraException, AsyncResultSet]
+  def execute(s: ZStatement[?]): IO[CassandraException, AsyncResultSet]
   def execute(s: BoundStatement): IO[QueryExecutionException, AsyncResultSet]
   def execute(s: SimpleStatement): IO[QueryExecutionException, AsyncResultSet]
   def executeHeadOption[Out](s: ZStatement[Out]): IO[CassandraException, Option[Out]]
@@ -32,7 +32,7 @@ trait ZCqlSession:
   def stream[Out](s: ZStatement[Out]): Stream[CassandraException, Chunk[Out]]
   def stream(s: BoundStatement): Stream[CassandraException, Chunk[Row]]
   def stream(s: SimpleStatement): Stream[CassandraException, Chunk[Row]]
-  def streamResultSet(s: ZStatement[_]): Stream[CassandraException, AsyncResultSet]
+  def streamResultSet(s: ZStatement[?]): Stream[CassandraException, AsyncResultSet]
   def streamResultSet(s: BoundStatement): Stream[CassandraException, AsyncResultSet]
   def streamResultSet(s: SimpleStatement): Stream[CassandraException, AsyncResultSet]
 
@@ -54,7 +54,7 @@ object ZCqlSession:
     ZIO.serviceWithZIO(_.prepare(s))
 
   def preparePar(ss: SimpleStatement*): ZIO[ZCqlSession, PrepareStatementException, List[PreparedStatement]] =
-    ZIO.serviceWithZIO(_.preparePar(ss: _*))
+    ZIO.serviceWithZIO(_.preparePar(ss*))
 
   /**
    * A stream of chunks, every chunk representing a page.
@@ -64,7 +64,7 @@ object ZCqlSession:
 
   object untyped:
 
-    def execute(s: ZStatement[_]): ZIO[ZCqlSession, CassandraException, AsyncResultSet] =
+    def execute(s: ZStatement[?]): ZIO[ZCqlSession, CassandraException, AsyncResultSet] =
       ZIO.serviceWithZIO(_.execute(s))
 
     def execute(s: BoundStatement): ZIO[ZCqlSession, QueryExecutionException, AsyncResultSet] =
@@ -78,13 +78,13 @@ object ZCqlSession:
       ZIO.serviceWithZIO(_.execute(s))
 
     def executePar(ss: BoundStatement*): ZIO[ZCqlSession, QueryExecutionException, List[AsyncResultSet]] =
-      ZIO.serviceWithZIO(_.executePar(ss: _*))
+      ZIO.serviceWithZIO(_.executePar(ss*))
 
     /**
      * The same as `execute` but in parallel.
      */
     def executeParSimple(ss: SimpleStatement*): ZIO[ZCqlSession, QueryExecutionException, List[AsyncResultSet]] =
-      ZIO.serviceWithZIO(_.executeParSimple(ss: _*))
+      ZIO.serviceWithZIO(_.executeParSimple(ss*))
 
     def stream(s: BoundStatement): ZStream[ZCqlSession, CassandraException, Chunk[Row]] =
       ZStream.serviceWithStream(_.stream(s))
@@ -92,7 +92,7 @@ object ZCqlSession:
     def stream(s: SimpleStatement): ZStream[ZCqlSession, CassandraException, Chunk[Row]] =
       ZStream.serviceWithStream(_.stream(s))
 
-    def streamResultSet(s: ZStatement[_]): ZStream[ZCqlSession, CassandraException, AsyncResultSet] =
+    def streamResultSet(s: ZStatement[?]): ZStream[ZCqlSession, CassandraException, AsyncResultSet] =
       ZStream.serviceWithStream(_.streamResultSet(s))
 
     def streamResultSet(s: BoundStatement): ZStream[ZCqlSession, CassandraException, AsyncResultSet] =

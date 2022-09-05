@@ -2,15 +2,15 @@ package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.cql.SimpleStatement
 
-sealed trait CassandraException extends Exception with Product with Serializable
+sealed trait CassandraException extends Exception
 object CassandraException {
 
-  case class DecodeException(s: ZStatement[_])(cause: Throwable)
-      extends Exception(s"Failed decoding the result of <<${s.statement.getQuery}>>: ${cause.getMessage}")
+  case class DecodeException(s: SimpleStatement)(cause: Throwable)
+      extends Exception(s"Failed decoding the result of <<${s.getQuery}>>: ${cause.getMessage}")
       with CassandraException
 
-  case class EmptyResultSetException(s: ZStatement[_])
-      extends Exception(s"${s.statement.getQuery} returned empty")
+  case class EmptyResultSetException(s: SimpleStatement)
+      extends Exception(s"${s.getQuery} returned empty")
       with CassandraException
 
   case class PrepareStatementException(s: SimpleStatement)(cause: Throwable)

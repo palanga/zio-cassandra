@@ -2,8 +2,8 @@ package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
 import palanga.zio.cassandra.ZStatement.{ bindNothing, identityRow }
-import zio.test.Assertion._
-import zio.test._
+import zio.test.Assertion.*
+import zio.test.*
 
 object ZStatementSpec {
 
@@ -17,8 +17,8 @@ object ZStatementSpec {
         val statement  = SimpleStatement.builder(query).build
 
         assert(zstatement.statement)(equalTo(statement)) &&
-        assert(zstatement.bindUnsafe)(equalTo(bindNothing)) &&
-        assert(zstatement.decodeUnsafe)(equalTo(identityRow))
+        assert(zstatement.bindInternal)(equalTo(bindNothing)) &&
+        assert(zstatement.decodeInternal)(equalTo(identityRow))
 
       },
       test("from string ops") {
@@ -29,8 +29,8 @@ object ZStatementSpec {
         val statement  = SimpleStatement.builder(query).build
 
         assert(zstatement.statement)(equalTo(statement)) &&
-        assert(zstatement.bindUnsafe)(equalTo(bindNothing)) &&
-        assert(zstatement.decodeUnsafe)(equalTo(identityRow))
+        assert(zstatement.bindInternal)(equalTo(bindNothing)) &&
+        assert(zstatement.decodeInternal)(equalTo(identityRow))
 
       },
       test("decode") {
@@ -39,11 +39,11 @@ object ZStatementSpec {
 
         // implicitly assert is type of ZSimpleStatement[String] and ZBoundStatement[String]
         val zstatementRow: ZSimpleStatement[Row]       = ZStatement(query)
-        val zstatementString: ZSimpleStatement[String] = zstatementRow.decode(decoder)
-        val zstatementBound: ZBoundStatement[String]   = zstatementRow.bind("Frida Kahlo").decode(decoder)
+        val zstatementString: ZSimpleStatement[String] = zstatementRow.decodeAttempt(decoder)
+        val zstatementBound: ZBoundStatement[String]   = zstatementRow.bind("Frida Kahlo").decodeAttempt(decoder)
 
-        assert(zstatementString.decodeUnsafe)(equalTo(decoder)) &&
-        assert(zstatementBound.decodeUnsafe)(equalTo(decoder))
+        assert(zstatementString.decodeInternal)(equalTo(decoder)) &&
+        assert(zstatementBound.decodeInternal)(equalTo(decoder))
 
       },
       test("bind preserves decoder") {
@@ -52,9 +52,9 @@ object ZStatementSpec {
 
         // implicitly assert is type of ZBoundStatement[String]
         val zstatementRow: ZSimpleStatement[Row]     = ZStatement(query)
-        val zstatementBound: ZBoundStatement[String] = zstatementRow.decode(decoder).bind("Xul Solar")
+        val zstatementBound: ZBoundStatement[String] = zstatementRow.decodeAttempt(decoder).bind("Xul Solar")
 
-        assert(zstatementBound.decodeUnsafe)(equalTo(decoder))
+        assert(zstatementBound.decodeInternal)(equalTo(decoder))
 
       },
     )

@@ -55,7 +55,7 @@ object ZCqlSessionStreamSpec {
   private def populate(session: ZCqlSession) =
     session
       .prepare(insertStatement)
-      .flatMap(ps => session.executePar(painters.map(painter => ps.bind(painter.region, painter.name)): _*))
+      .flatMap(ps => session.executePar(painters.map(painter => ps.bind(painter.region, painter.name))*))
 
   private val painterDecoder: Row => Painter = row => Painter(row.getString(0), row.getString(1))
 
@@ -69,7 +69,7 @@ object ZCqlSessionStreamSpec {
       .builder(s"SELECT * FROM $tableName WHERE region=?;")
       .setPageSize(PAGE_SIZE)
       .build()
-      .decode(painterDecoder)
+      .decodeAttempt(painterDecoder)
   }
 
   private def selectByRegion(region: String) = selectByRegionStatement.bind(region)
