@@ -13,7 +13,7 @@ A ZIO wrapper around the Datastax Cassandra driver for Java
 -----------------------------------------------------------
 
 * Scala 3.1.3
-* Datastax java driver 4.14.1
+* Datastax java driver 4.15.0
 * ZIO 2.0.1
 
 Installation
