@@ -1,6 +1,8 @@
 zio-cassandra
 =============
 
+A ZIO wrapper around the Datastax Cassandra driver for Java
+
 [![Release Artifacts][Badge-SonatypeReleases]][Link-SonatypeReleases]
 [![Snapshot Artifacts][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots]
 
@@ -9,12 +11,6 @@ zio-cassandra
 [Link-SonatypeSnapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/io/github/palanga/zio-cassandra_3/ "Sonatype Snapshots"
 [Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/io.github.palanga/zio-cassandra_3.svg "Sonatype Snapshots"
 
-A ZIO wrapper around the Datastax Cassandra driver for Java
------------------------------------------------------------
-
-* Scala 3.1.3
-* Datastax java driver 4.15.0
-* ZIO 2.0.1
 
 Installation
 ------------
