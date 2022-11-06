@@ -3,7 +3,7 @@ name := "zio-cassandra"
 val MAIN_SCALA                      = "3.2.0"
 val ALL_SCALA                       = Seq(MAIN_SCALA)
 val DATASTAX_JAVA_CASSANDRA_VERSION = "4.15.0"
-val ZIO_VERSION                     = "2.0.2"
+val ZIO_VERSION                     = "2.0.3"
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
