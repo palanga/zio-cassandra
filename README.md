@@ -15,7 +15,7 @@ A ZIO wrapper around the Datastax Cassandra driver for Java
 Installation
 ------------
 
-We publish to maven central so you just have to add this to your `build.sbt` file
+We publish to maven central for scala 3 and 2.13 so you just have to add this to your `build.sbt` file
 
 ```sbt
 libraryDependencies += "io.github.palanga" %% "zio-cassandra" % "version"
