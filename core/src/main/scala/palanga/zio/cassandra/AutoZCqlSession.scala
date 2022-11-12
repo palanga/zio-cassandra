@@ -4,7 +4,6 @@ import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.cql.*
 import palanga.zio.cassandra.CassandraException.*
 import palanga.zio.cassandra.util.paginate
-import palanga.zio.cassandra.{ util, CassandraException, ZStatement }
 import zio.*
 import zio.Console.{ printLine, printLineError }
 import zio.Schedule.{ recurs, spaced }
@@ -17,7 +16,7 @@ import scala.language.postfixOps
  * A Cassandra session that need minimal configuration. The first time a statement is executed by this session it is
  * automatically prepared and cached for further use.
  */
-object AutoZCqlSession:
+object AutoZCqlSession {
 
   // TODO set query timeout
   def openDefault(): ZIO[Scope, SessionOpenException, ZCqlSession] = open()
@@ -34,7 +33,7 @@ object AutoZCqlSession:
       statements <- Ref.make(Map.empty[SimpleStatement, PreparedStatement])
       session    <- ZIO
                       .attempt(
-                        AutoZCqlSession(
+                        new AutoZCqlSession(
                           CqlSession
                             .builder()
                             .addContactPoint(new InetSocketAddress(host, port))
@@ -55,12 +54,12 @@ object AutoZCqlSession:
       .withFinalizer(closeSession(_))
 
   def openFromDatastaxSession(underlying: => CqlSession): ZIO[Scope, SessionOpenException, ZCqlSession] =
-    (for
+    (for {
       _          <- printLine("Opening cassandra session...")
       statements <- Ref.make(Map.empty[SimpleStatement, PreparedStatement])
-      session    <- ZIO.attempt(AutoZCqlSession(underlying, statements))
+      session    <- ZIO.attempt(new AutoZCqlSession(underlying, statements))
       _          <- printLine("Cassandra session is ready")
-    yield session)
+    } yield session)
       .tapError(t => printLineError("Failed trying to build cql session: " + t.getMessage))
       .tapError(_ => printLineError("Retrying in one second..."))
       .mapError(SessionOpenException.apply)
@@ -88,6 +87,8 @@ object AutoZCqlSession:
 
   private def useKeyspace(keyspace: String) = SimpleStatement.builder(s"USE $keyspace;").build
 
+}
+
 /**
  * @see
  *   [[AutoZCqlSession]]
@@ -103,10 +104,12 @@ final class AutoZCqlSession private[cassandra] (
   override def execute(s: ZStatement[?]): IO[CassandraException, AsyncResultSet] =
     preparedStatements.get.flatMap(_.get(s.statement).fold(prepare(s).flatMap(executePrepared(s)))(executePrepared(s)))
 
-  override def executeHeadOption[Out](s: ZStatement[Out]): IO[CassandraException, Option[Out]] =
+  override def executeHeadOption[Out](s: ZStatement[Out]): IO[CassandraException, Option[Out]] = {
+    val zero: Either[DecodeException, Option[Out]] = Right(None)
     execute(s)
       .map(result => Option(result.one()))
-      .flatMap(maybeRow => ZIO.fromEither(maybeRow.fold(Right(None))(r => s.decodeInternal(r).map(Some(_)))))
+      .flatMap(maybeRow => ZIO.fromEither(maybeRow.fold(zero)(r => s.decodeInternal(r).map(Some(_)))))
+  }
 
   override def executeHeadOrFail[Out](s: ZStatement[Out]): IO[CassandraException, Out] =
     execute(s).flatMap { rs =>
