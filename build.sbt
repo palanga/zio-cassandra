@@ -1,7 +1,9 @@
 name := "zio-cassandra"
 
-val MAIN_SCALA                      = "3.2.0"
-val ALL_SCALA                       = Seq(MAIN_SCALA)
+val MAIN_SCALA = "3.2.0"
+val SCALA_213  = "2.13.10"
+val ALL_SCALA  = Seq(MAIN_SCALA, SCALA_213)
+
 val DATASTAX_JAVA_CASSANDRA_VERSION = "4.15.0"
 val ZIO_VERSION                     = "2.0.3"
 
@@ -10,6 +12,8 @@ addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 
 inThisBuild(
   List(
+    scalaVersion           := MAIN_SCALA,
+    crossScalaVersions     := ALL_SCALA,
     organization           := "io.github.palanga",
     homepage               := Some(url("https://github.com/palanga/zio-cassandra")),
     licenses               := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
@@ -28,6 +32,7 @@ inThisBuild(
 
 lazy val root =
   (project in file("."))
+    .settings(crossScalaVersions := Nil)
     .settings(
       publish / skip := true
     )
@@ -66,19 +71,31 @@ lazy val examples =
     .dependsOn(core)
 
 val commonSettings = Def.settings(
-  scalaVersion       := MAIN_SCALA,
-  crossScalaVersions := ALL_SCALA,
-  versionScheme      := Some("strict"),
-  scalacOptions ++= Seq(
-    "-rewrite",
-    "-source:future-migration",
-    "-deprecation",
-    "-encoding",
-    "UTF-8",
-    "-explaintypes",
-    "-feature",
-    "-language:higherKinds",
-    "-language:existentials",
-    "-unchecked",
-  ),
+  scalacOptions ++= commonOptions ++ versionSpecificOptions(scalaVersion.value)
+)
+
+def commonOptions = Seq(
+  "-deprecation",
+  "-encoding",
+  "UTF-8",
+  "-feature",
+  "-language:higherKinds",
+  "-language:existentials",
+  "-unchecked",
+)
+
+def versionSpecificOptions(scalaVersion: String) =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((3, 0))  => scala3Options
+    case Some((2, 13)) => scala2Options
+    case _             => Seq.empty
+  }
+
+val scala3Options = Seq(
+  "-rewrite",
+  "-source:future-migration",
+)
+
+val scala2Options = Seq(
+  "-Xsource:3"
 )

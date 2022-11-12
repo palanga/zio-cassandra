@@ -1,24 +1,22 @@
 package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.cql.*
-import palanga.zio.cassandra.*
 import palanga.zio.cassandra.CassandraException.*
 import zio.*
-import zio.Console.*
-import zio.Schedule.*
 import zio.stream.*
 
-import java.net.InetSocketAddress
 import scala.language.postfixOps
 
-object session:
+object session {
+
   /**
    * A Cassandra session that need minimal configuration. The first time a statement is executed by this session it is
    * automatically prepared and cached for further use.
    */
   val auto: AutoZCqlSession.type = AutoZCqlSession
+}
 
-trait ZCqlSession:
+trait ZCqlSession {
   def close: IO[SessionCloseException, Unit]
   def execute(s: ZStatement[?]): IO[CassandraException, AsyncResultSet]
   def execute(s: BoundStatement): IO[QueryExecutionException, AsyncResultSet]
@@ -35,11 +33,12 @@ trait ZCqlSession:
   def streamResultSet(s: ZStatement[?]): Stream[CassandraException, AsyncResultSet]
   def streamResultSet(s: BoundStatement): Stream[CassandraException, AsyncResultSet]
   def streamResultSet(s: SimpleStatement): Stream[CassandraException, AsyncResultSet]
+}
 
 /**
  * TODO we should use a logger instead of Console.printLine
  */
-object ZCqlSession:
+object ZCqlSession {
 
   def close: ZIO[ZCqlSession, SessionCloseException, Unit] =
     ZIO.serviceWithZIO(_.close)
@@ -62,7 +61,7 @@ object ZCqlSession:
   def stream[Out](s: ZStatement[Out]): ZStream[ZCqlSession, CassandraException, Chunk[Out]] =
     ZStream.serviceWithStream(_.stream(s))
 
-  object untyped:
+  object untyped {
 
     def execute(s: ZStatement[?]): ZIO[ZCqlSession, CassandraException, AsyncResultSet] =
       ZIO.serviceWithZIO(_.execute(s))
@@ -100,3 +99,7 @@ object ZCqlSession:
 
     def streamResultSet(s: SimpleStatement): ZStream[ZCqlSession, CassandraException, AsyncResultSet] =
       ZStream.serviceWithStream(_.streamResultSet(s))
+
+  }
+
+}

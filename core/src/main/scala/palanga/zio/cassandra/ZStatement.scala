@@ -13,7 +13,7 @@ object ZStatement {
   def fromString(query: String): ZSimpleStatement[Row] = apply(query)
 
   def fromDatastaxStatement(statement: SimpleStatement): ZSimpleStatement[Row] =
-    ZSimpleStatement[Row](statement, bindNothing, identityRow)
+    new ZSimpleStatement[Row](statement, bindNothing, identityRow)
 
   implicit class StringOps(private val self: String) extends AnyVal {
     def toStatement: ZSimpleStatement[Row] = apply(self)
