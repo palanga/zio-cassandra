@@ -18,7 +18,7 @@ Installation
 We publish to maven central so you just have to add this to your `build.sbt` file
 
 ```sbt
-libraryDependencies += "io.github.palanga" %% "zio-cassandra" % "0.9.0"
+libraryDependencies += "io.github.palanga" %% "zio-cassandra" % "version"
 ```
 
 If you want to use snapshots add this resolver:
