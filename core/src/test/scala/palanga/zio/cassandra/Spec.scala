@@ -22,4 +22,4 @@ object Spec extends ZIOSpecDefault:
       ZCqlSessionSpec.testSuite,
       ZCqlSessionStreamSpec.testSuite,
     )
-      .provideCustomLayerShared(dependencies) @@ TestAspect.parallelN(4)
+      .provideLayerShared(dependencies) @@ TestAspect.parallelN(4)
