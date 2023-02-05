@@ -3,14 +3,9 @@ zio-cassandra
 
 A ZIO wrapper around the Datastax Cassandra driver for Java
 
+[![CI][Badge-CI]][Link-CI]
 [![Release Artifacts][Badge-SonatypeReleases]][Link-SonatypeReleases]
 [![Snapshot Artifacts][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots]
-
-[Link-SonatypeReleases]: https://s01.oss.sonatype.org/content/repositories/releases/io/github/palanga/zio-cassandra_3/ "Sonatype Releases"
-[Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/s01.oss.sonatype.org/io.github.palanga/zio-cassandra_3.svg "Sonatype Releases"
-[Link-SonatypeSnapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/io/github/palanga/zio-cassandra_3/ "Sonatype Snapshots"
-[Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/io.github.palanga/zio-cassandra_3.svg "Sonatype Snapshots"
-
 
 Installation
 ------------
@@ -135,3 +130,16 @@ Troubleshooting:
 * Default host and port is `127.0.0.1:9042`
 * `cqlsh` will connect there by default
 * `CREATE KEYSPACE IF NOT EXISTS zio_cassandra_test WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };`
+
+
+
+[Link-CI]: https://github.com/palanga/zio-cassandra/actions/workflows/ci.yml "CI"
+[Badge-CI]: https://github.com/palanga/zio-cassandra/actions/workflows/ci.yml/badge.svg "CI"
+
+
+[Link-SonatypeReleases]: https://s01.oss.sonatype.org/content/repositories/releases/io/github/palanga/zio-cassandra_3/ "Sonatype Releases"
+[Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/s01.oss.sonatype.org/io.github.palanga/zio-cassandra_3.svg "Sonatype Releases"
+
+[Link-SonatypeSnapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/io/github/palanga/zio-cassandra_3/ "Sonatype Snapshots"
+[Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/io.github.palanga/zio-cassandra_3.svg "Sonatype Snapshots"
+
