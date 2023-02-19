@@ -5,7 +5,7 @@ val SCALA_213  = "2.13.10"
 val ALL_SCALA  = Seq(MAIN_SCALA, SCALA_213)
 
 val DATASTAX_JAVA_CASSANDRA_VERSION = "4.15.0"
-val ZIO_VERSION                     = "2.0.6"
+val ZIO_VERSION                     = "2.0.9"
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
