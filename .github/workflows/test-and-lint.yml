@@ -39,5 +39,5 @@ jobs:
           distribution: zulu
           java-version: 11
           cache: sbt
-      - name: Compile and run tests
-        run: sbt test
+      - name: Cross compile and cross run tests
+        run: sbt +test

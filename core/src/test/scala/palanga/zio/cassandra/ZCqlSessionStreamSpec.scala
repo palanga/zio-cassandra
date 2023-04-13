@@ -1,7 +1,6 @@
 package palanga.zio.cassandra
 
 import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
-import palanga.zio.cassandra.*
 import zio.ZIO
 import zio.test.*
 import zio.test.Assertion.*
@@ -82,7 +81,7 @@ object ZCqlSessionStreamSpec {
         val sPageSize = s.runHead.map(_.fold(0)(_.size))
 
         val results =
-          sPageSize.map(assert(_)(equalTo(PAGE_SIZE))) ::
+          sPageSize.map(pageSize => assertTrue(pageSize == PAGE_SIZE)) ::
             s.flattenChunks.runCollect.map(assert(_)(hasSameElements(latinPainters))) :: Nil
 
         ZIO.collectAllPar(results).map(_.reduce(_ && _))
@@ -95,7 +94,7 @@ object ZCqlSessionStreamSpec {
           .map(_.bind(LATIN_AMERICA))
           .flatMap(ZCqlSession.untyped.stream(_).runCollect)
           .map(pages =>
-            assert(pages.headOption.fold(0)(_.size))(equalTo(PAGE_SIZE)) &&
+            assertTrue(pages.headOption.fold(0)(_.size) == PAGE_SIZE) &&
               assert(pages.flatten.map(painterDecoder))(hasSameElements(latinPainters))
           )
 
@@ -106,7 +105,7 @@ object ZCqlSessionStreamSpec {
           .stream(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(LATIN_AMERICA)))
           .runCollect
           .map(pages =>
-            assert(pages.headOption.fold(0)(_.size))(equalTo(PAGE_SIZE)) &&
+            assertTrue(pages.headOption.fold(0)(_.size) == PAGE_SIZE) &&
               assert(pages.flatten.map(painterDecoder))(hasSameElements(latinPainters))
           )
 
@@ -119,7 +118,7 @@ object ZCqlSessionStreamSpec {
           .streamResultSet(selectByRegion(EUROPE))
           .runCollect
           .map(_.count(_.currentPage().asScala.nonEmpty))
-          .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
+          .map(pageSize => assertTrue(pageSize == europeanPainters.size / PAGE_SIZE))
 
       },
       test("stream result set prepared") {
@@ -131,7 +130,7 @@ object ZCqlSessionStreamSpec {
           .map(_.bind(EUROPE))
           .flatMap(ZCqlSession.untyped.streamResultSet(_).runCollect)
           .map(_.count(_.currentPage().asScala.nonEmpty))
-          .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
+          .map(pageSize => assertTrue(pageSize == europeanPainters.size / PAGE_SIZE))
 
       },
       test("stream result set simple") {
@@ -142,7 +141,7 @@ object ZCqlSessionStreamSpec {
           .streamResultSet(selectByRegionStatement.statement.setPositionalValues(java.util.List.of(EUROPE)))
           .runCollect
           .map(_.count(_.currentPage().asScala.nonEmpty))
-          .map(assert(_)(equalTo(europeanPainters.size / PAGE_SIZE)))
+          .map(pageSize => assertTrue(pageSize == europeanPainters.size / PAGE_SIZE))
 
       },
     )

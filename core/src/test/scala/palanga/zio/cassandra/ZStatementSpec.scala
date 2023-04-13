@@ -4,9 +4,8 @@ import com.datastax.oss.driver.api.core.cql.{ Row, SimpleStatement }
 import palanga.zio.cassandra.CassandraException.DecodeException
 import palanga.zio.cassandra.ZStatement.{ bindNothing, identityRow }
 import zio.test.*
-import zio.test.Assertion.*
 
-object ZStatementSpec:
+object ZStatementSpec {
 
   private val query = "SELECT * FROM painters WHERE name=?"
 
@@ -63,3 +62,5 @@ object ZStatementSpec:
 
       },
     )
+
+}

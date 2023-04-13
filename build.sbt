@@ -86,7 +86,7 @@ def commonOptions = Seq(
 
 def versionSpecificOptions(scalaVersion: String) =
   CrossVersion.partialVersion(scalaVersion) match {
-    case Some((3, 0))  => scala3Options
+    case Some((3, _))  => scala3Options
     case Some((2, 13)) => scala2Options
     case _             => Seq.empty
   }

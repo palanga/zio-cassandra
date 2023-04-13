@@ -55,19 +55,21 @@ object ZCqlSessionSpec {
           .execute(insert(frida))
           .zipRight(ZCqlSession.untyped.execute(selectByCountryAndName(frida.country, frida.name)))
           .flatMap(rs => ZIO `attempt` painterDecoder(rs.one()))
-          .map(assert(_)(equalTo(frida)))
+          .map(painter => assertTrue(painter == frida))
       },
       test("execute head option") {
         val xul = Painter(ARGENTINA, "Xul Solar")
         ZCqlSession.untyped.execute(insert(xul)) *>
-          ZCqlSession.executeHeadOption(selectByCountryAndName(xul.country, xul.name)) `map`
-          (assert(_)(isSome(equalTo(xul))))
+          ZCqlSession
+            .executeHeadOption(selectByCountryAndName(xul.country, xul.name))
+            .map(painter => assertTrue(painter.get == xul))
       },
       test("execute head or fail succeed case") {
         val tarsila = Painter(BRAZIL, "Tarsila do Amaral")
         ZCqlSession.untyped.execute(insert(tarsila)) *>
-          ZCqlSession.executeHeadOrFail(selectByCountryAndName(tarsila.country, tarsila.name)) `map`
-          (assert(_)(equalTo(tarsila)))
+          ZCqlSession
+            .executeHeadOrFail(selectByCountryAndName(tarsila.country, tarsila.name))
+            .map(painter => assertTrue(painter == tarsila))
       },
       test("execute prepared") {
         val benito = Painter(ARGENTINA, "Benito Quinquela Martín")
@@ -79,7 +81,7 @@ object ZCqlSessionSpec {
           .map(_.bind(benito.country, benito.name))
           .flatMap(ZCqlSession.untyped.execute)
           .flatMap(rs => ZIO `attempt` painterDecoder(rs.one()))
-          .map(assert(_)(equalTo(benito)))
+          .map(painter => assertTrue(painter == benito))
       },
       test("execute prepared par") {
         val berthe = Painter(FRANCE, "Berthe Morisot")
@@ -95,7 +97,7 @@ object ZCqlSessionSpec {
           results     <- ZIO `attempt` rss.map(_.one()).map(painterDecoder)
           bertheResult = results.head
           monetResult  = results.tail.head
-        } yield assert(bertheResult)(equalTo(berthe)) && assert(monetResult)(equalTo(monet))
+        } yield assertTrue(bertheResult == berthe, monetResult == monet)
       },
       test("execute simple") {
         val remedios                               = Painter(SPAIN, "Remedios Varo")
@@ -106,7 +108,7 @@ object ZCqlSessionSpec {
             ZCqlSession.untyped.execute(selectByCountryAndNameStatement.statement.setPositionalValues(remediosValues))
           )
           .flatMap(rs => ZIO `attempt` painterDecoder(rs.one()))
-          .map(assert(_)(equalTo(remedios)))
+          .map(painter => assertTrue(painter == remedios))
       },
       test("execute simple par") {
 
@@ -127,23 +129,26 @@ object ZCqlSessionSpec {
             )
           )
           .flatMap(rss => ZIO `attempt` rss.map(_.one()).map(painterDecoder))
-          .map { case d :: l :: Nil => assert(d)(equalTo(dali)) && assert(l)(equalTo(leBrun)) }
+          .map { case d :: l :: Nil => assertTrue(d == dali, l == leBrun) }
 
       },
       test("prepare") {
-        ZCqlSession.prepare(insertStatement.statement) `map` (_.getQuery) `map` (assert(_)(
-          equalTo(insertStatement.statement.getQuery)
-        ))
+        ZCqlSession
+          .prepare(insertStatement.statement)
+          .map(_.getQuery)
+          .map(query => assertTrue(query == insertStatement.statement.getQuery))
       },
       test("prepare par") {
         ZCqlSession.preparePar(insertStatement.statement, selectByCountryAndNameStatement.statement).map {
           case insert :: select :: Nil =>
-            assert(insert.getQuery)(equalTo(insertStatement.statement.getQuery)) &&
-            assert(select.getQuery)(equalTo(selectByCountryAndNameStatement.statement.getQuery))
+            assertTrue(
+              insert.getQuery == insertStatement.statement.getQuery,
+              select.getQuery == selectByCountryAndNameStatement.statement.getQuery,
+            )
         }
       },
       test("execute head or fail failed case") {
-        ZCqlSession.executeHeadOrFail(selectByCountryAndName(ARGENTINA, "nik chorro")).exit `map`
+        ZCqlSession.executeHeadOrFail(selectByCountryAndName(ARGENTINA, "non existent")).exit `map`
           (assert(_)(fails(isSubtype[EmptyResultSetException](anything))))
       },
     )

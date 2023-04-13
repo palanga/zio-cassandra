@@ -3,7 +3,7 @@ package palanga.zio.cassandra
 import zio.*
 import zio.test.*
 
-object Spec extends ZIOSpecDefault:
+object Spec extends ZIOSpecDefault {
 
   private val dependencies =
     ZLayer
@@ -23,3 +23,5 @@ object Spec extends ZIOSpecDefault:
       ZCqlSessionStreamSpec.testSuite,
     )
       .provideLayerShared(dependencies) @@ TestAspect.parallelN(4)
+
+}
