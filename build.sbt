@@ -1,6 +1,6 @@
 name := "zio-cassandra"
 
-val MAIN_SCALA = "3.3.1"
+val MAIN_SCALA = "3.3.3"
 val SCALA_213  = "2.13.11"
 val ALL_SCALA  = Seq(MAIN_SCALA, SCALA_213)
 
