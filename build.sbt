@@ -97,5 +97,5 @@ val scala3Options = Seq(
 )
 
 val scala2Options = Seq(
-  "-Xsource:3"
+  "-Xsource:3-cross"
 )
