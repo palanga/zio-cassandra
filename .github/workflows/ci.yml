@@ -13,7 +13,7 @@ jobs:
     uses: ./.github/workflows/test-and-lint.yml
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     steps:
       - name: Checkout
